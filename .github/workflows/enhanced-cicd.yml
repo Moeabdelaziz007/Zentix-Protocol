@@ -1,0 +1,509 @@
+name: Enhanced CI/CD Pipeline - Darwin Protocol
+
+on:
+  push:
+    branches: [main, develop, release/*]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 2 * * *' # Daily security scan
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Security and Code Quality
+  security-scan:
+    name: Security & Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd frontend && npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript type checking
+        run: npm run type-check
+
+      - name: Security audit
+        run: npm audit --audit-level high
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          languages: javascript, typescript
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Unit and Integration Tests
+  test-coverage:
+    name: Test Coverage Analysis
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [core, frontend, contracts]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Python for smart contract tests
+        if: matrix.component == 'contracts'
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Hardhat dependencies
+        if: matrix.component == 'contracts'
+        run: npm install @nomicfoundation/hardhat-toolbox
+
+      - name: Run unit tests with coverage
+        run: |
+          if [ "${{ matrix.component }}" = "frontend" ]; then
+            cd frontend && npm test -- --coverage
+          elif [ "${{ matrix.component }}" = "contracts" ]; then
+            npx hardhat test
+          else
+            npm run test:run -- --coverage
+          fi
+
+      - name: Upload coverage to Codecov
+        if: matrix.component != 'contracts'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: ${{ matrix.component }}
+          name: codecov-${{ matrix.component }}
+
+      - name: Coverage report
+        run: |
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          cat coverage/coverage-summary.json | jq '.total.lines.pct' >> $GITHUB_STEP_SUMMARY
+
+  # Darwin Protocol Integration Tests
+  integration-tests:
+    name: Darwin Protocol Integration Tests
+    runs-on: ubuntu-latest
+    needs: [security-scan, test-coverage]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zentix_test
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test environment
+        run: |
+          cp .env.example .env.test
+          echo "NODE_ENV=test" >> .env.test
+          echo "REDIS_URL=redis://localhost:6379" >> .env.test
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/zentix_test" >> .env.test
+
+      - name: Run database migrations
+        run: npm run migrate:test
+
+      - name: Start background services
+        run: |
+          npm run start:test &
+          sleep 30
+
+      - name: Run Darwin Protocol integration tests
+        run: |
+          npm run test:integration -- --testTimeout=60000
+
+      - name: Run A/B testing infrastructure tests
+        run: |
+          npm run test:ab-testing
+
+      - name: Run cross-chain interoperability tests
+        run: |
+          npm run test:cross-chain
+
+      - name: Collect integration test results
+        if: always()
+        run: |
+          mkdir -p test-results
+          cp -r coverage test-results/
+          cp -r cypress test-results/ || true
+
+  # E2E Testing with Playwright
+  e2e-tests:
+    name: End-to-End Testing
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd frontend && npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Build application
+        run: |
+          npm run build
+          cd frontend && npm run build
+
+      - name: Start application
+        run: |
+          npm run start &
+          cd frontend && npm run preview &
+          sleep 30
+
+      - name: Run Playwright tests
+        run: |
+          npx playwright test --project=${{ matrix.browser }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ matrix.browser }}
+          path: |
+            test-results/
+            playwright-report/
+            playwright-trace/
+
+  # Performance and Load Testing
+  performance-tests:
+    name: Performance & Load Testing
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application for performance testing
+        run: |
+          npm run start:perf &
+          sleep 30
+
+      - name: Run Lighthouse CI
+        run: |
+          npx @lhci/cli@0.12.x autorun
+
+      - name: Run k6 load tests
+        run: |
+          docker run --rm -i grafana/k6 run - <tests/load/zentix-protocol.js
+
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            lighthousereports/
+            k6-results/
+            metrics/
+
+  # Build and Package
+  build-and-package:
+    name: Build & Package Application
+    runs-on: ubuntu-latest
+    needs: [integration-tests, performance-tests]
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd frontend && npm ci
+
+      - name: Build for ${{ matrix.environment }}
+        env:
+          NODE_ENV: ${{ matrix.environment }}
+        run: |
+          npm run build
+          cd frontend && npm run build
+
+      - name: Build Docker images
+        if: matrix.environment == 'prod'
+        run: |
+          docker build -t zentix-protocol:${{ github.sha }} .
+          docker build -t zentix-protocol:latest ./frontend
+
+      - name: Security scan Docker images
+        if: matrix.environment == 'prod'
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy image zentix-protocol:${{ github.sha }}
+
+      - name: Save build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ matrix.environment }}
+          path: |
+            dist/
+            frontend/dist/
+            *.tgz
+          retention-days: 30
+
+  # Deployment to Vercel with Blue-Green Strategy
+  deploy-vercel:
+    name: Deploy to Vercel - ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    needs: build-and-package
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: ${{ matrix.environment }}
+      url: ${{ steps.deploy.outputs.url }}
+    strategy:
+      matrix:
+        environment: [staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=${{ matrix.environment }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          if [ "${{ matrix.environment }}" = "production" ]; then
+            echo "url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT
+          else
+            echo "url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Health Check
+        run: |
+          sleep 30
+          curl -f ${{ steps.deploy.outputs.url }}/api/health || exit 1
+
+      - name: Update deployment status
+        run: |
+          echo "## 🚀 Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ Deployed Successfully" >> $GITHUB_STEP_SUMMARY
+
+  # Automated Rollback System
+  health-monitor:
+    name: Health Monitoring & Auto-Rollback
+    runs-on: ubuntu-latest
+    needs: deploy-vercel
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Monitor application health
+        run: |
+          URL="${{ needs.deploy-vercel.outputs.url }}"
+          
+          # Check application health endpoints
+          for i in {1..10}; do
+            if curl -f "$URL/api/health" > /dev/null 2>&1; then
+              echo "✅ Health check passed"
+              exit 0
+            fi
+            echo "⏳ Health check attempt $i/10 failed, retrying..."
+            sleep 30
+          done
+          
+          echo "❌ Health check failed after 10 attempts"
+          exit 1
+
+      - name: Check SLA metrics
+        run: |
+          # Custom SLA monitoring script
+          npm run check-sla-metrics
+
+      - name: Trigger rollback if health fails
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const deploymentId = context.payload.deployment?.id;
+            
+            if (deploymentId) {
+              await github.rest.repos.createDeploymentStatus({
+                owner,
+                repo,
+                deployment_id: deploymentId,
+                state: 'failure',
+                environment: 'production',
+                description: 'Automated rollback due to health check failure'
+              });
+            }
+
+  # Notifications
+  notify-success:
+    name: Success Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy-vercel, health-monitor]
+    if: success()
+    steps:
+      - name: Slack Notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: '🎉 Zentix Protocol deployment successful! Environment: ${{ matrix.environment }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+
+      - name: Discord Notification
+        run: |
+          curl -X POST ${{ secrets.DISCORD_WEBHOOK }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "embeds": [{
+                "title": "🚀 Deployment Successful",
+                "description": "Zentix Protocol deployed to ${{ matrix.environment }}",
+                "color": 0x00FF00,
+                "fields": [
+                  {"name": "Environment", "value": "${{ matrix.environment }}", "inline": true},
+                  {"name": "Commit", "value": "${{ github.sha }}", "inline": true},
+                  {"name": "URL", "value": "${{ needs.deploy-vercel.outputs.url }}", "inline": false}
+                ]
+              }]
+            }'
+
+  notify-failure:
+    name: Failure Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy-vercel, health-monitor]
+    if: failure()
+    steps:
+      - name: Slack Alert
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '💥 Zentix Protocol deployment failed! Check logs immediately.'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+
+      - name: Discord Alert
+        run: |
+          curl -X POST ${{ secrets.DISCORD_WEBHOOK }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "embeds": [{
+                "title": "💥 Deployment Failed",
+                "description": "Zentix Protocol deployment failed - immediate attention required!",
+                "color": 0xFF0000,
+                "fields": [
+                  {"name": "Environment", "value": "${{ matrix.environment }}", "inline": true},
+                  {"name": "Commit", "value": "${{ github.sha }}", "inline": true},
+                  {"name": "Action Required", "value": "Check deployment logs and initiate rollback if necessary", "inline": false}
+                ]
+              }]
+            }'
+
+      - name: Create GitHub Issue
+        if: github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issueNumber = context.issue?.number;
+            
+            if (issueNumber) {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title: `🚨 Production Deployment Failed - ${new Date().toISOString()}`,
+                body: `## Deployment Failure Report\n\n- **Environment**: Production\n- **Commit**: ${context.sha}\n- **Branch**: ${context.ref}\n- **Actor**: ${context.actor}\n- **Workflow**: ${context.workflow}\n\n### Immediate Actions Required\n1. Check CI/CD logs\n2. Investigate root cause\n3. Initiate rollback if necessary\n4. Update stakeholders\n\n[View Failed Deployment](${context.payload.repository?.html_url}/actions/runs/${context.runId})`,
+                labels: ['deployment-failure', 'urgent', 'production']
+              });
+            }

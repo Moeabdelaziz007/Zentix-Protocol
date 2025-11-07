@@ -1,59 +1,55 @@
 {
+  "name": "zentix-protocol",
   "version": 2,
   "builds": [
     {
-      "src": "marketing/landing.html",
-      "use": "@vercel/static"
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
     {
-      "src": "server/guardianAPI.ts",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "server/relayerServer.ts",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/",
-      "dest": "/marketing/landing.html"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     },
     {
-      "src": "/api/guardians/(.*)",
-      "dest": "/server/guardianAPI.ts"
-    },
-    {
-      "src": "/api/compliance/(.*)",
-      "dest": "/server/guardianAPI.ts"
-    },
-    {
-      "src": "/relay/(.*)",
-      "dest": "/server/relayerServer.ts"
-    },
-    {
-      "src": "/health",
-      "dest": "/server/guardianAPI.ts"
+      "src": "/(.*)",
+      "dest": "/frontend/dist/$1"
     }
   ],
-  "env": {
-    "NODE_ENV": "production",
-    "RPC_MUMBAI": "@rpc_mumbai",
-    "PINATA_API_KEY": "@pinata_api_key",
-    "PINATA_SECRET_KEY": "@pinata_secret_key",
-    "ZXT_TOKEN_ADDRESS_MUMBAI": "@zxt_token_address",
-    "RELAYER_PRIVATE_KEY": "@relayer_private_key"
-  },
   "functions": {
-    "server/guardianAPI.ts": {
+    "api/**/*.js": {
+      "runtime": "nodejs20.x",
       "memory": 1024,
       "maxDuration": 30
     },
-    "server/relayerServer.ts": {
-      "memory": 512,
+    "api/health.js": {
+      "runtime": "nodejs20.x",
+      "memory": 128,
+      "maxDuration": 10
+    },
+    "api/metrics.js": {
+      "runtime": "nodejs20.x", 
+      "memory": 256,
       "maxDuration": 30
     }
   },
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "regions": ["iad1"],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -63,7 +59,7 @@
           "value": "*"
         },
         {
-          "key": "Access-Control-Allow-Methods",
+          "key": "Access-Control-Allow-Methods", 
           "value": "GET, POST, PUT, DELETE, OPTIONS"
         },
         {
@@ -71,6 +67,43 @@
           "value": "Content-Type, Authorization"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/dashboard",
+      "destination": "/api/monitoring/dashboard"
+    },
+    {
+      "source": "/metrics",
+      "destination": "/api/monitoring/metrics"
     }
   ]
 }

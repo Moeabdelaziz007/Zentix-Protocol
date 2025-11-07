@@ -61,11 +61,57 @@
     "deploy:economic": "hardhat run scripts/deployEconomic.ts --network mumbai",
     "deploy:polygon": "hardhat run scripts/deploy.ts --network polygon",
     "deploy:vercel": "vercel --prod",
-    "build": "tsc",
+    
+    "build": "tsc && cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "npm run build",
+    
     "test": "vitest",
     "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config=vitest.integration.config.js",
+    "test:ab-testing": "node tests/integration/ab-testing.test.js",
+    "test:cross-chain": "node tests/integration/cross-chain.test.js",
+    "test:load": "k6 run tests/load/zentix-protocol.js",
+    "test:performance": "lhci autorun",
+    
     "lint": "eslint core --ext .ts",
-    "type-check": "tsc --noEmit"
+    "lint:fix": "eslint core --ext .ts --fix",
+    "lint:frontend": "cd frontend && npm run lint",
+    
+    "type-check": "tsc --noEmit",
+    "type-check:frontend": "cd frontend && npm run type-check",
+    
+    "migrate:test": "npm run build && node scripts/migrate-test.js",
+    "migrate:prod": "npm run build && node scripts/migrate-prod.js",
+    
+    "monitor:health": "node core/monitoring/darwinHealthMonitor.ts",
+    "monitor:start": "npm run monitor:health",
+    "monitor:stop": "pkill -f darwinHealthMonitor",
+    
+    "infrastructure:deploy": "cd infrastructure && terraform init && terraform plan && terraform apply",
+    "infrastructure:destroy": "cd infrastructure && terraform destroy",
+    
+    "deploy:staging": "vercel --prod --token=$VERCEL_TOKEN --alias=zentix-protocol-staging",
+    "deploy:production": "vercel --prod --token=$VERCEL_TOKEN",
+    "deploy:rollback": "vercel rollback --token=$VERCEL_TOKEN",
+    
+    "security:audit": "npm audit --audit-level high",
+    "security:scan": "npm audit && snyk test",
+    
+    "metrics:collect": "curl -s https://api.zentix-protocol.com/api/metrics | jq '.'",
+    "metrics:health": "curl -s https://api.zentix-protocol.com/api/health | jq '.'",
+    
+    "ci:build": "npm run lint && npm run type-check && npm run test:run && npm run build",
+    "ci:test": "npm run lint && npm run test:run",
+    "ci:deploy": "npm run ci:build && npm run deploy:production",
+    
+    "preview:test": "cd frontend && npm run preview",
+    "preview:dev": "cd frontend && npm run dev",
+    
+    "e2e:test": "npx playwright test",
+    "e2e:test:ui": "npx playwright test --ui",
+    "e2e:debug": "npx playwright test --debug"
   },
   "keywords": [
     "ai",
