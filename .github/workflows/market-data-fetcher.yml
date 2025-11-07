@@ -1,0 +1,37 @@
+name: Market Data Fetcher
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  fetch-market-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm install
+
+      - name: Fetch Crypto Prices
+        run: npm run quick:free-apis
+        timeout-minutes: 3
+
+      - name: Cache Market Data
+        uses: actions/cache@v3
+        with:
+          path: data/market-cache
+          key: market-data-${{ github.run_number }}
+          restore-keys: market-data-
+
+      - name: Upload Market Data
+        uses: actions/upload-artifact@v3
+        with:
+          name: market-data-${{ github.run_number }}
+          path: data/
+          retention-days: 7

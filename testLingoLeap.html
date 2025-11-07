@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test LingoLeap Translation</title>
+</head>
+<body>
+    <h1>Test LingoLeap Translation</h1>
+    <div>
+        <textarea id="sourceText" placeholder="Enter text to translate">Hello, how are you today?</textarea>
+        <br><br>
+        <label>From: 
+            <select id="sourceLanguage">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+            </select>
+        </label>
+        <label>To: 
+            <select id="targetLanguage">
+                <option value="es">Spanish</option>
+                <option value="en">English</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+            </select>
+        </label>
+        <br><br>
+        <button onclick="translateText()">Translate</button>
+        <br><br>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function translateText() {
+            const sourceText = document.getElementById('sourceText').value;
+            const sourceLanguage = document.getElementById('sourceLanguage').value;
+            const targetLanguage = document.getElementById('targetLanguage').value;
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/lingoleap/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: sourceText,
+                        sourceLanguage: sourceLanguage,
+                        targetLanguage: targetLanguage
+                    })
+                });
+                
+                const result = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<h3>Translation Result:</h3>' +
+                    '<p><strong>Original:</strong> ' + result.originalText + '</p>' +
+                    '<p><strong>Translated:</strong> ' + result.translatedText + '</p>' +
+                    '<p><strong>Pronunciation:</strong> ' + (result.pronunciation || 'N/A') + '</p>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

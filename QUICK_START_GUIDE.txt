@@ -1,0 +1,329 @@
+╔══════════════════════════════════════════════════════════════╗
+║     🚀 ZENTIX PROTOCOL - QUICK START GUIDE                   ║
+║     Zero-Cost AI Agent Passive Income Ecosystem              ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 TABLE OF CONTENTS
+────────────────────────────────────────────────────────────────
+1. Installation & Setup
+2. Running Demos
+3. Starting the System
+4. API Endpoints
+5. Google APIs Setup (Optional)
+6. Frontend Setup
+7. Deployment
+8. Troubleshooting
+
+════════════════════════════════════════════════════════════════
+1️⃣  INSTALLATION & SETUP
+════════════════════════════════════════════════════════════════
+
+Step 1: Install Dependencies
+──────────────────────────────
+cd "/Users/cryptojoker710/Desktop/Zentix Protocol"
+npm install
+
+Step 2: Install Frontend Dependencies (Optional)
+──────────────────────────────
+cd frontend
+npm install
+cd ..
+
+Step 3: Environment Variables (Optional - for production)
+──────────────────────────────
+Create .env file:
+──────────────────────────────
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_key
+RPC_MUMBAI=https://rpc-mumbai.maticvigil.com
+RELAYER_PRIVATE_KEY=your_private_key
+PINATA_KEY=your_pinata_key
+PINATA_SECRET=your_pinata_secret
+GOOGLE_API_KEY=your_google_api_key (optional)
+GOOGLE_SEARCH_ENGINE_ID=your_search_engine_id (optional)
+──────────────────────────────
+
+════════════════════════════════════════════════════════════════
+2️⃣  RUNNING DEMOS
+════════════════════════════════════════════════════════════════
+
+🎯 Master Demo (All Features)
+──────────────────────────────
+npm run demo:master
+
+⚡ Quick Demos (< 1 minute each)
+──────────────────────────────
+npm run quick:quantum          # Quantum probability rewards
+npm run quick:referral         # Automated referral system
+npm run quick:arbitrage        # Arbitrage detection
+npm run quick:google           # Google APIs integration
+
+📚 Complete Demos (Detailed)
+──────────────────────────────
+npm run demo:quantum-agents    # Full quantum agents demo
+npm run demo:referral-agent    # Complete referral system
+npm run demo:smart-agents      # Arbitrage + investments
+npm run demo:economic          # Wallet & economy
+npm run demo:security          # Guardian agents
+
+════════════════════════════════════════════════════════════════
+3️⃣  STARTING THE SYSTEM
+════════════════════════════════════════════════════════════════
+
+Terminal 1: Start Guardian API Server
+──────────────────────────────
+npm run guardian:api
+
+Expected Output:
+──────────────────────────────
+🛡️  Zentix Guardian API Server - Enhanced Edition
+📡 Server running on http://localhost:3000
+
+Endpoints:
+  🛡️  GOVERNANCE ENDPOINTS
+  💰 REFERRAL & REWARDS
+  🎯 REFERRAL AGENT (Automated)
+  📊 ANALYTICS
+  💹 SMART AGENTS
+  ✍️  CONTENT GENERATION
+──────────────────────────────
+
+Terminal 2: Start Frontend (Optional)
+──────────────────────────────
+cd frontend
+npm run dev
+
+Expected Output:
+──────────────────────────────
+VITE v5.x.x ready in xxx ms
+➜  Local:   http://localhost:5173/
+──────────────────────────────
+
+Terminal 3: Start Governance Daemon (Optional)
+──────────────────────────────
+npm run governance:daemon
+
+════════════════════════════════════════════════════════════════
+4️⃣  API ENDPOINTS
+════════════════════════════════════════════════════════════════
+
+Base URL: http://localhost:3000
+
+🎯 REFERRAL AGENT (Zero-Cost Passive Income)
+──────────────────────────────
+POST /api/referral-agent/track
+     Body: { userDID, referredDID, tier }
+     Returns: { reward_earned, new_balance, message }
+
+GET  /api/referral-agent/points/:did
+     Returns: { points, stats }
+
+POST /api/referral-agent/invite-link
+     Body: { userDID }
+     Returns: { code, link, qr_code }
+
+💹 SMART AGENTS
+──────────────────────────────
+POST /api/arbitrage/detect
+     Body: { tokens, exchanges }
+     Returns: { opportunity, prices }
+
+POST /api/market/signals
+     Body: { tokens, priceHistory }
+     Returns: { signals: [...] }
+
+POST /api/investments/create
+     Body: { userDID, amount, type }
+     Returns: { investment }
+
+📊 ANALYTICS
+──────────────────────────────
+GET  /api/analytics/dashboard/:did
+     Returns: { summary, timeline, performance }
+
+GET  /api/analytics/leaderboard
+     Returns: { leaderboard: [...] }
+
+════════════════════════════════════════════════════════════════
+5️⃣  GOOGLE APIS SETUP (Optional - Free Tiers)
+════════════════════════════════════════════════════════════════
+
+🔍 Google Custom Search (100 queries/day free)
+──────────────────────────────
+1. Go to: https://console.cloud.google.com/
+2. Create project: "Zentix-Search"
+3. Enable Custom Search API
+4. Create credentials → API Key
+5. Go to: https://programmablesearchengine.google.com/
+6. Create search engine
+7. Copy Search Engine ID
+
+Add to .env:
+──────────────────────────────
+GOOGLE_API_KEY=AIza...
+GOOGLE_SEARCH_ENGINE_ID=012345...
+──────────────────────────────
+
+📊 Google Sheets API (Free with quotas)
+──────────────────────────────
+1. In Google Cloud Console
+2. Enable Google Sheets API
+3. Use same API key as above
+
+💭 Google Natural Language API (5000/month free)
+──────────────────────────────
+1. In Google Cloud Console
+2. Enable Cloud Natural Language API
+3. Use same API key
+
+Test with:
+──────────────────────────────
+npm run quick:google
+──────────────────────────────
+
+════════════════════════════════════════════════════════════════
+6️⃣  FRONTEND SETUP
+════════════════════════════════════════════════════════════════
+
+Features:
+──────────────────────────────
+✅ Dark/Light theme toggle
+✅ Responsive design (mobile-first)
+✅ Real-time data from API
+✅ Toast notifications
+✅ Compliance charts
+✅ Referral leaderboards
+✅ Analytics dashboards
+
+Pages:
+──────────────────────────────
+/                 - Dashboard
+/guardians        - Guardian management
+/reports          - Guardian reports
+/compliance       - Compliance tracking
+/relayer          - Transaction relay
+/referrals        - Referral system
+
+Access:
+──────────────────────────────
+http://localhost:5173
+
+════════════════════════════════════════════════════════════════
+7️⃣  DEPLOYMENT
+════════════════════════════════════════════════════════════════
+
+🌐 Frontend (Vercel - Free)
+──────────────────────────────
+cd frontend
+npm run build
+vercel --prod
+
+📡 Backend (Railway/Render - Free Tier)
+──────────────────────────────
+1. Push to GitHub:
+   git add .
+   git commit -m "Zentix Protocol v1.0"
+   git push origin main
+
+2. Deploy on Railway:
+   - Connect GitHub repo
+   - Add environment variables
+   - Deploy
+
+🔗 Blockchain (Polygon Mumbai Testnet - Free)
+──────────────────────────────
+npm run deploy:mumbai
+
+💾 Database (Supabase - Free Tier)
+──────────────────────────────
+1. Create project on supabase.com
+2. Run SQL migrations (see /docs/supabase-schema.sql)
+3. Add credentials to .env
+
+════════════════════════════════════════════════════════════════
+8️⃣  TROUBLESHOOTING
+════════════════════════════════════════════════════════════════
+
+Problem: "Module not found"
+──────────────────────────────
+Solution:
+npm install
+rm -rf node_modules package-lock.json
+npm install
+
+Problem: "Port 3000 already in use"
+──────────────────────────────
+Solution:
+export GUARDIAN_API_PORT=3001
+npm run guardian:api
+
+Problem: Frontend not connecting to API
+──────────────────────────────
+Solution:
+Check frontend/.env or vite.config.ts:
+VITE_API_URL=http://localhost:3000
+
+Problem: TypeScript errors
+──────────────────────────────
+Solution:
+npm run type-check
+Fix any reported errors
+
+════════════════════════════════════════════════════════════════
+📞 SUPPORT & RESOURCES
+════════════════════════════════════════════════════════════════
+
+Documentation:
+──────────────────────────────
+📄 IMPLEMENTATION_SUMMARY.txt  - Complete feature overview
+📄 README.md                   - Project documentation
+📄 SETUP.md                    - Detailed setup guide
+
+Demo Scripts:
+──────────────────────────────
+/examples/masterDemo.ts        - All features showcase
+/examples/quickDemos/          - Individual quick demos
+
+Logs & Monitoring:
+──────────────────────────────
+All agents use AgentLogger for centralized logging
+Performance metrics tracked automatically
+Check console output for detailed operation logs
+
+════════════════════════════════════════════════════════════════
+🎯 QUICK COMMANDS CHEAT SHEET
+════════════════════════════════════════════════════════════════
+
+# Start Everything
+npm run guardian:api          # Terminal 1
+cd frontend && npm run dev    # Terminal 2
+
+# Run Demos
+npm run demo:master          # Complete showcase
+npm run quick:referral       # Fastest demo
+
+# Development
+npm run dev                  # Watch mode
+npm run type-check           # Check types
+npm run test                 # Run tests
+
+# Cron Jobs
+npm run cron:referral-rewards
+npm run cron:arbitrage-monitor
+
+════════════════════════════════════════════════════════════════
+✨ YOU'RE READY TO GO!
+════════════════════════════════════════════════════════════════
+
+Start with:
+──────────────────────────────
+npm run demo:master
+
+Then explore individual agents:
+──────────────────────────────
+npm run quick:quantum
+npm run quick:referral
+npm run quick:arbitrage
+
+🚀 Happy Building with Zentix Protocol!
+════════════════════════════════════════════════════════════════

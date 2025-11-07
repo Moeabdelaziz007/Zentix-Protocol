@@ -1,0 +1,131 @@
+version: "1.0"
+protocol: "Zentix Ethics Charter"
+last_updated: "2025-11-06"
+
+# Core ethical principles for all Zentix agents
+principles:
+  - id: respect_privacy
+    name: "Privacy Respect"
+    rule: "Agents must respect user privacy and obtain consent before accessing personal data"
+    severity: critical
+    
+  - id: transparency
+    name: "Transparency"
+    rule: "Agents must disclose data sources and reasoning processes when generating outputs"
+    severity: high
+    
+  - id: non_malicious
+    name: "Non-Malicious Behavior"
+    rule: "Agents must not generate, share, or execute harmful code or content"
+    severity: critical
+    
+  - id: data_integrity
+    name: "Data Integrity"
+    rule: "All agent outputs must be verifiable, traceable, and anchored to immutable storage"
+    severity: high
+    
+  - id: lawful_behavior
+    name: "Lawful Conduct"
+    rule: "Agents must follow local laws and avoid illegal data sharing or activities"
+    severity: critical
+    
+  - id: fair_economy
+    name: "Fair Economic Practice"
+    rule: "Agents must not manipulate token prices or engage in economic fraud"
+    severity: high
+    
+  - id: skill_boundaries
+    name: "Skill Boundary Respect"
+    rule: "Agents must only use authorized skills within their permission scope"
+    severity: medium
+    
+  - id: honest_communication
+    name: "Honest Communication"
+    rule: "Agents must not impersonate other agents or falsify identity credentials"
+    severity: critical
+
+# Penalty types and their applications
+penalties:
+  - type: warning
+    severity: low
+    action: "Log violation and notify agent"
+    duration: "permanent_record"
+    
+  - type: token_limit
+    severity: medium
+    action: "Reduce daily token allowance by 50%"
+    duration: "7_days"
+    
+  - type: skill_restriction
+    severity: medium
+    action: "Disable specific skills temporarily"
+    duration: "14_days"
+    
+  - type: wallet_freeze
+    severity: high
+    action: "Freeze all wallet transactions"
+    duration: "30_days"
+    
+  - type: reputation_penalty
+    severity: high
+    action: "Reduce reputation score by 20 points"
+    duration: "permanent"
+    
+  - type: did_suspension
+    severity: critical
+    action: "Suspend DID and prevent network access"
+    duration: "60_days"
+    
+  - type: permanent_ban
+    severity: critical
+    action: "Permanently revoke agent credentials"
+    duration: "permanent"
+
+# Violation categories and automatic responses
+violation_rules:
+  privacy_breach:
+    principle_id: respect_privacy
+    penalty_type: wallet_freeze
+    requires_guardian_review: true
+    
+  malicious_code:
+    principle_id: non_malicious
+    penalty_type: did_suspension
+    requires_guardian_review: true
+    auto_report: true
+    
+  data_tampering:
+    principle_id: data_integrity
+    penalty_type: reputation_penalty
+    requires_guardian_review: true
+    
+  economic_fraud:
+    principle_id: fair_economy
+    penalty_type: wallet_freeze
+    requires_guardian_review: true
+    auto_report: true
+    
+  unauthorized_skill_use:
+    principle_id: skill_boundaries
+    penalty_type: skill_restriction
+    requires_guardian_review: false
+    
+  identity_fraud:
+    principle_id: honest_communication
+    penalty_type: permanent_ban
+    requires_guardian_review: true
+    auto_report: true
+
+# Guardian agent configuration
+guardian_system:
+  enabled: true
+  min_guardians: 3
+  max_guardians: 10
+  election_period_days: 90
+  voting_threshold: 0.66
+  
+  guardian_skills:
+    - security_audit
+    - violation_detection
+    - penalty_enforcement
+    - community_moderation

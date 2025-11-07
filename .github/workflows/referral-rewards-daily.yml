@@ -1,0 +1,36 @@
+name: Referral Rewards Distribution
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  distribute-rewards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm install
+
+      - name: Distribute Referral Rewards
+        run: npm run cron:referral-rewards
+        timeout-minutes: 10
+
+      - name: Generate Rewards Report
+        run: |
+          mkdir -p reports
+          echo "Referral Rewards Distribution - $(date)" > reports/referral-report.txt
+          echo "Execution completed successfully" >> reports/referral-report.txt
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: referral-rewards-report-${{ github.run_number }}
+          path: reports/
+          retention-days: 30

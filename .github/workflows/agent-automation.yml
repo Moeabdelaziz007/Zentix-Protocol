@@ -1,0 +1,78 @@
+name: Zentix Agent Automation
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  run-agent-demos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Master Demo
+        run: npm run demo:master
+        timeout-minutes: 5
+
+      - name: Run Quick Tests
+        run: npm run test:agents
+        timeout-minutes: 3
+
+  fetch-crypto-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - run: npm install
+      
+      - name: Fetch Crypto Prices
+        run: npm run quick:free-apis
+        timeout-minutes: 2
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: crypto-data
+          path: logs/
+
+  distribute-rewards:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 0 * * *'  # Only on daily schedule
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - run: npm install
+      
+      - name: Distribute Referral Rewards
+        run: npm run cron:referral-rewards
+        timeout-minutes: 10
+
+  arbitrage-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - run: npm install
+      
+      - name: Monitor Arbitrage Opportunities
+        run: npm run cron:arbitrage-monitor
+        timeout-minutes: 5

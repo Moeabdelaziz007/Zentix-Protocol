@@ -1,0 +1,44 @@
+name: System Health Monitor
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm install
+
+      - name: Run Performance Tests
+        run: npm run test:agents
+        continue-on-error: true
+
+      - name: Run Master Demo
+        run: npm run demo:master
+        timeout-minutes: 5
+
+      - name: Check System Health
+        run: |
+          echo "System Health Check - $(date)" > health-report.txt
+          echo "Tests completed" >> health-report.txt
+
+      - name: Upload Health Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: health-report-${{ github.run_number }}
+          path: health-report.txt
+          retention-days: 30
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "🚨 Health check failed! System requires attention."

@@ -1,0 +1,170 @@
+# Zentix Protocol - Manus Cloud Configuration
+# Deploy Governance Node with automatic scaling
+
+name: zentix-governance
+version: 0.6.0
+runtime: node18
+
+# Build configuration
+build:
+  install: npm install
+  build: npm run build
+  
+# Service definitions
+services:
+  # Main Governance Daemon
+  - name: governance-daemon
+    type: worker
+    command: npm run governance:daemon
+    instances: 1
+    resources:
+      memory: 512MB
+      cpu: 0.5
+    autoscale:
+      enabled: true
+      min: 1
+      max: 3
+      metric: cpu
+      threshold: 70
+    health_check:
+      path: /health
+      interval: 30s
+      timeout: 10s
+    env:
+      NODE_ENV: production
+      
+  # Guardian Monitor API
+  - name: guardian-api
+    type: web
+    command: npm run guardian:api
+    port: 3000
+    instances: 1
+    resources:
+      memory: 256MB
+      cpu: 0.25
+    routes:
+      - path: /api/guardians/*
+        strip_prefix: false
+      - path: /api/compliance/*
+        strip_prefix: false
+    env:
+      NODE_ENV: production
+      
+  # Gasless Relayer (optional)
+  - name: relayer
+    type: web
+    command: tsx server/relayerServer.ts
+    port: 3001
+    instances: 1
+    resources:
+      memory: 256MB
+      cpu: 0.25
+    routes:
+      - path: /relay/*
+        strip_prefix: false
+    env:
+      NODE_ENV: production
+
+# Environment variables (from secrets)
+secrets:
+  - RPC_MUMBAI
+  - PRIVATE_KEY_DEV
+  - PINATA_API_KEY
+  - PINATA_SECRET_KEY
+  - ZXT_TOKEN_ADDRESS_MUMBAI
+  - ANCHOR_REGISTRY_ADDRESS_MUMBAI
+  - TASK_ESCROW_ADDRESS_MUMBAI
+  - REFERRAL_REWARD_ADDRESS_MUMBAI
+  - RELAYER_PRIVATE_KEY
+
+# Storage (for local caching)
+volumes:
+  - name: cache
+    mount: /app/.cache
+    size: 1GB
+    
+# Database (optional - for production)
+databases:
+  - name: governance-db
+    engine: postgres
+    version: 14
+    storage: 1GB
+    
+# Monitoring
+monitoring:
+  enabled: true
+  metrics:
+    - governance.violations.detected
+    - governance.audits.completed
+    - governance.guardians.active
+    - economic.faucet.claims
+    - economic.escrow.created
+    
+# Alerts
+alerts:
+  - name: high-violations
+    condition: governance.violations.detected > 10
+    channel: email
+    
+  - name: low-balance
+    condition: relayer.balance < 0.1
+    channel: slack
+    
+# Backup strategy
+backups:
+  enabled: true
+  schedule: "0 0 * * *" # Daily at midnight
+  retention: 7 # Keep 7 days
+  
+# Deployment strategy
+deployment:
+  strategy: rolling
+  max_surge: 1
+  max_unavailable: 0
+  
+# Cost optimization
+optimization:
+  auto_sleep: true # Sleep when idle
+  sleep_after: 30m # 30 minutes of inactivity
+  wake_on: http # Wake on HTTP request
+  
+# Network
+network:
+  ingress:
+    enabled: true
+    tls: true
+    domains:
+      - governance.zentix.app
+      - api.zentix.app
+      
+# CORS configuration
+cors:
+  enabled: true
+  origins:
+    - https://zentix.app
+    - https://*.zentix.app
+    - http://localhost:*
+    
+# Rate limiting
+rate_limit:
+  enabled: true
+  requests_per_minute: 100
+  burst: 20
+  
+# Logging
+logging:
+  level: info
+  format: json
+  destinations:
+    - stdout
+    - file: /var/log/zentix/governance.log
+      
+# Cron jobs
+cron:
+  - name: daily-audit
+    schedule: "0 2 * * *" # 2 AM daily
+    command: npm run governance:daily-audit
+    
+  - name: guardian-rewards
+    schedule: "0 0 * * 0" # Weekly on Sunday
+    command: npm run governance:distribute-rewards

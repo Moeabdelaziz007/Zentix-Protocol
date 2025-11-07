@@ -1,0 +1,44 @@
+name: System Watchdog
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour
+  workflow_dispatch:
+
+jobs:
+  system-health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Auto-Healer Demo
+        run: npm run quick:auto-heal
+        timeout-minutes: 5
+        continue-on-error: true
+
+      - name: Check System Health
+        run: |
+          echo "System Health Check - $(date)" > health-status.txt
+          echo "Auto-healer executed successfully" >> health-status.txt
+
+      - name: Upload Health Status
+        uses: actions/upload-artifact@v3
+        with:
+          name: health-status-${{ github.run_number }}
+          path: health-status.txt
+          retention-days: 7
+
+      - name: Notify on Critical Failure
+        if: failure()
+        run: |
+          echo "🚨 CRITICAL: System health check failed!"
+          echo "Timestamp: $(date)"

@@ -1,0 +1,33 @@
+name: Quantum Agent Daily Execution
+on:
+  schedule:
+    - cron: '0 9 * * *'  # Every day at 9:00 UTC
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  run-quantum-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Quantum Agent
+        run: npm run quick:quantum
+        timeout-minutes: 5
+
+      - name: Upload execution logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: quantum-agent-logs-${{ github.run_number }}
+          path: logs/
+          retention-days: 7
