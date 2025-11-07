@@ -219,7 +219,7 @@ export class HeliosSocialAgent extends ZentixAgent {
 
       case 'linkedin':
         return `💼 Professional Insight: ${topic}\n\nIn today's competitive landscape, understanding ${topic} is crucial for success. ${objective === 'awareness' ? 'This comprehensive approach offers significant advantages.' : 
-               objective === 'engagement' ? 'I'd love to hear your experiences with this.' : 
+               objective === 'engagement' ? 'I\'d love to hear your experiences with this.' : 
                'Consider these strategies for implementation.'}\n\nConnect with me for more insights!`;
 
       case 'instagram':

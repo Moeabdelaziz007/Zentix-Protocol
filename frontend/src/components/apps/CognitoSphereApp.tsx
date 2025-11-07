@@ -1,27 +1,16 @@
 import { useState } from 'react';
-import { 
-  BookOpen, 
-  Search, 
-  FileText, 
-  Link, 
-  Upload, 
-  MessageSquare, 
-  Sparkles, 
-  Clock, 
-  Table, 
-  Lightbulb, 
-  Share2,
-  Plus,
-  X,
-  Save,
-  Download,
+import {
+  BookOpen,
+  FileText,
+  Link,
+  MessageSquare,
+  Play,
+  Pause,
+  Send,
+  Phone,
+  Monitor,
+  Command,
   Brain,
-  Database,
-  Globe,
-  File,
-  Calendar,
-  ListOrdered,
-  Quote
 } from 'lucide-react';
 
 interface Source {
@@ -85,7 +74,6 @@ export function CognitoSphereApp() {
   ]);
   
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [newNoteContent, setNewNoteContent] = useState('');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
 

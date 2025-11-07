@@ -1079,7 +1079,7 @@ export function LingoLeapApp() {
                           className="bg-background border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors cursor-pointer"
                           onClick={() => {
                             setSelectedVideo(video);
-                            analyzeVideo(video.id);
+                            analyzeVideo();
                           }}
                         >
                           <div className="relative">

@@ -113,7 +113,6 @@ const AVAILABLE_TOOLS: Tool[] = [
 ];
 
 
-
 export function ZentixForgeApp() {
   const [activeTab, setActiveTab] = useState<'builder' | 'marketplace' | 'sandbox' | 'economy'>('builder');
   const [step, setStep] = useState<number>(1);
@@ -982,119 +981,6 @@ export function ZentixForgeApp() {
               </div>
             </div>
             <div className="mt-8 text-sm text-muted-foreground text-center">
-              <p>Coming soon: Interactive sandbox with real agent testing capabilities</p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'economy' && (
-          <div>
-            <h3 className="text-lg font-semibold mb-6">Zentix Economy Dashboard</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-5">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Your Balance</p>
-                    <p className="text-2xl font-bold">124.5 ZXT</p>
-                  </div>
-                  <Coins className="w-8 h-8 text-yellow-500" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-lg p-5">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Active Agents</p>
-                    <p className="text-2xl font-bold">3</p>
-                  </div>
-                  <Bot className="w-8 h-8 text-blue-500" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-lg p-5">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Total Earnings</p>
-                    <p className="text-2xl font-bold">42.3 ZXT</p>
-                  </div>
-                  <Wallet className="w-8 h-8 text-green-500" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-5">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Transactions</p>
-                    <p className="text-2xl font-bold">127</p>
-                  </div>
-                  <FileText className="w-8 h-8 text-purple-500" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-background/50 border border-border rounded-lg p-6">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Wallet className="w-5 h-5" />
-                  Agent Wallets
-                </h4>
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="flex justify-between items-center p-3 bg-background/50 rounded-lg border border-border">
-                      <div>
-                        <p className="font-medium">Marketing Assistant #{i}</p>
-                        <p className="text-xs text-muted-foreground font-mono">ztw:0x{Math.random().toString(16).substr(2, 8).toUpperCase()}...</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">{(Math.random() * 10).toFixed(2)} ZXT</p>
-                        <p className="text-xs text-muted-foreground">+0.5 today</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="bg-background/50 border border-border rounded-lg p-6">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Recent Transactions
-                </h4>
-                <div className="space-y-3">
-                  {[
-                    { type: 'reward', desc: 'Task completion', amount: '+2.5 ZXT', agent: 'Marketing Assistant #1' },
-                    { type: 'tool', desc: 'Image generation', amount: '-0.05 ZXT', agent: 'Creative Agent' },
-                    { type: 'reward', desc: 'Referral bonus', amount: '+10.0 ZXT', agent: 'System' },
-                    { type: 'tool', desc: 'Web search', amount: '-0.01 ZXT', agent: 'Research Assistant' }
-                  ].map((tx, i) => (
-                    <div key={i} className="flex justify-between items-center p-3 bg-background/50 rounded-lg border border-border">
-                      <div>
-                        <p className="font-medium">{tx.desc}</p>
-                        <p className="text-xs text-muted-foreground">{tx.agent}</p>
-                      </div>
-                      <div className={`font-medium ${tx.amount.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
-                        {tx.amount}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-8 text-center text-sm text-muted-foreground">
-              <p>Connected to Polygon Mumbai Testnet</p>
-              <p className="mt-1">ZXT Token: 0x7A58c0Be72BE218B41C608b7Fe7C5bB630736C71</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 text-sm text-muted-foreground">
               <p>Coming soon: Interactive sandbox with real agent testing capabilities</p>
             </div>
           </div>

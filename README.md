@@ -125,11 +125,16 @@ This will create an agent named "Jules" with:
 ### Holy Trinity AI Implementation
 - [Holy Trinity AI Implementation](HOLY_TRINITY_AI_IMPLEMENTATION.md) - Complete guide to Jules, z.ai, and Gemini Controller integration
 
+### Deployment Resources
+- [Codebase Structure Index](CODEBASE_STRUCTURE_INDEX.md) - Comprehensive overview of all modules and components
+- [Vercel Deployment Plan](VERCEL_DEPLOYMENT_PLAN.md) - Detailed deployment strategy for Vercel
+- [Deployment Checklist](DEPLOYMENT_CHECKLIST.md) - Step-by-step deployment verification guide
+
 ---
 
 ## 💡 Usage Example
 
-```typescript
+```
 import { DidAixIntegration } from './core/identity';
 
 // Create agent with DID
@@ -167,7 +172,7 @@ console.log(verification.valid); // true
 
 ### Digital Identity (DID)
 
-```typescript
+```
 {
   "did": "zxdid:zentix:0x8AFCE1B0921A9E91...",
   "created_at": "2025-11-06T10:00:00Z",

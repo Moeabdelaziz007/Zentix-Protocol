@@ -1,25 +1,18 @@
 import { useState } from 'react';
 import {
-  Link,
   Bot,
   MessageSquare,
-  Zap,
-  Settings,
-  Plus,
-  Trash2,
   Play,
   Pause,
-  CheckCircle,
-  AlertCircle,
-  Telegram,
+  Send,
   Phone,
   Monitor,
-  Database,
-  Send,
   Command,
-  Clock,
-  User,
-  Brain
+  Brain,
+  Plus,
+  Link,
+  Trash2,
+  Zap
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 
@@ -49,9 +42,17 @@ interface Platform {
   authType: string;
 }
 
+interface CommandHistoryItem {
+  command: string;
+  success: boolean;
+  result?: unknown;
+  error?: string;
+  timestamp: Date;
+}
+
 export function NexusBridgeApp() {
   const [activeTab, setActiveTab] = useState<'bridges' | 'builder' | 'remote'>('bridges');
-  const [commandHistory, setCommandHistory] = useState<any[]>([]);
+  const [commandHistory, setCommandHistory] = useState<CommandHistoryItem[]>([]);
   const [commandInput, setCommandInput] = useState('');
   const [isExecutingCommand, setIsExecutingCommand] = useState(false);
 
@@ -63,8 +64,8 @@ export function NexusBridgeApp() {
       const result = await apiService.executeRemoteCommand(commandInput);
       setCommandHistory(prev => [...prev, { command: commandInput, success: true, result, timestamp: new Date() }]);
       setCommandInput('');
-    } catch (error: any) {
-      setCommandHistory(prev => [...prev, { command: commandInput, success: false, error: error.message, timestamp: new Date() }]);
+    } catch (error) {
+      setCommandHistory(prev => [...prev, { command: commandInput, success: false, error: (error as Error).message, timestamp: new Date() }]);
     } finally {
       setIsExecutingCommand(false);
     }
@@ -118,7 +119,7 @@ export function NexusBridgeApp() {
     {
       id: 'telegram',
       name: 'Telegram Bot',
-      icon: <Telegram className="w-5 h-5" />,
+      icon: <Bot className="w-5 h-5" />,
       description: 'Connect to Telegram bots for messaging',
       authType: 'API Token'
     },
@@ -161,7 +162,7 @@ export function NexusBridgeApp() {
       const newBridge: Bridge = {
         id: `bridge-${Date.now()}`,
         name: bridgeName,
-        platform: selectedPlatform as any,
+        platform: selectedPlatform as 'telegram' | 'whatsapp' | 'discord' | 'slack' | 'custom',
         agentId: selectedAgent,
         agentName: agents.find(a => a.id === selectedAgent)?.name || 'Unknown Agent',
         status: 'active',
@@ -202,15 +203,6 @@ export function NexusBridgeApp() {
       case 'whatsapp': return 'text-green-500';
       case 'discord': return 'text-indigo-500';
       case 'slack': return 'text-purple-500';
-      default: return 'text-gray-500';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-green-500';
-      case 'inactive': return 'text-yellow-500';
-      case 'error': return 'text-red-500';
       default: return 'text-gray-500';
     }
   };

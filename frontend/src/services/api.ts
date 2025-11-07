@@ -529,27 +529,6 @@ class ApiService {
       body: JSON.stringify({ data }),
     });
   }
-
-  async analyzeMedicalDocument(document: string): Promise<MedicalAnalysisResult> {
-    return this.fetchJSON('/api/ai/ztools/medical', {
-      method: 'POST',
-      body: JSON.stringify({ document }),
-    });
-  }
-
-  async analyzeScientificPaper(paper: string): Promise<ScientificAnalysisResult> {
-    return this.fetchJSON('/api/ai/ztools/scientific', {
-      method: 'POST',
-      body: JSON.stringify({ paper }),
-    });
-  }
-
-  async analyzeMarketResearch(data: string): Promise<MarketAnalysisResult> {
-    return this.fetchJSON('/api/ai/ztools/market', {
-      method: 'POST',
-      body: JSON.stringify({ data }),
-    });
-  }
 }
 
 export const apiService = new ApiService();
