@@ -4,6 +4,7 @@
  */
 
 import { AgentLogger, LogEntry } from '../utils/agentLogger';
+import { MetaSelfMonitoringLoop } from './metaSelfMonitoringLoop';
 
 export interface PerformanceMetrics {
   timestamp: string;
@@ -107,7 +108,7 @@ export class PerformanceMonitor {
       };
     });
 
-    return {
+    const metrics = {
       timestamp: new Date().toISOString(),
       operations_total: stats.total_operations,
       operations_per_second: parseFloat(opsPerSecond.toFixed(2)),
@@ -118,6 +119,26 @@ export class PerformanceMonitor {
       slowest_operations: slowest,
       agent_breakdown: agentBreakdown,
     };
+
+    // Notify meta self-monitoring loop of new metrics
+    // This enables the loop to observe and adapt based on performance data
+    MetaSelfMonitoringLoop.observeCognitiveProcess({
+      id: `metrics-${now}`,
+      agentId: 'PerformanceMonitor',
+      processType: 'metrics-collection',
+      startTime: now,
+      inputs: [],
+      outputs: [metrics],
+      confidence: 1.0,
+      resourcesUsed: {
+        cpu: process.cpuUsage().user / 1000000, // Convert to seconds
+        memory: memoryMB,
+        network: 0 // Would need to track network usage separately
+      },
+      decisionPath: ['collect-metrics', 'analyze-data', 'generate-report']
+    });
+
+    return metrics;
   }
 
   /**

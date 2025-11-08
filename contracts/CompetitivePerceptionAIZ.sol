@@ -17,6 +17,7 @@ contract CompetitivePerceptionAIZ is AIZOrchestrator {
         uint256 lastAnalyzed;
         uint256 transactionCount;
         uint256 successRate;
+        uint256 detectedMEVBots; // New field for MEV bot detection
         mapping(bytes4 => uint256) methodUsage; // Track usage of different methods
     }
 
@@ -32,7 +33,7 @@ contract CompetitivePerceptionAIZ is AIZOrchestrator {
     // Structure for strategic alerts
     struct StrategicAlert {
         uint256 id;
-        string alertType; // STRATEGY_OPPORTUNITY, ALPHA_DECAY_WARNING, etc.
+        string alertType; // STRATEGY_OPPORTUNITY, ALPHA_DECAY_WARNING, MEV_BOT_DETECTED, DECOY_NEEDED
         string description;
         address source;
         uint256 timestamp;
@@ -47,6 +48,7 @@ contract CompetitivePerceptionAIZ is AIZOrchestrator {
     uint256 public competitorCount;
     uint256 public alertCount;
     address public intentBusAddress;
+    address public financialDecoyAgentAddress; // New field for FinancialDecoyAgent integration
 
     // Events
     event CompetitorAdded(address indexed competitorAddress, string name);
@@ -54,6 +56,8 @@ contract CompetitivePerceptionAIZ is AIZOrchestrator {
     event AlphaAnalysisUpdated(bytes32 indexed strategyId, uint256 profitability, uint256 decayRate);
     event StrategicAlertCreated(uint256 indexed alertId, string alertType, string description);
     event StrategicAlertProcessed(uint256 indexed alertId);
+    event MEVBotDetected(address indexed botAddress, uint256 transactionCount);
+    event DecoyStrategyNeeded(address indexed competitor, string reason);
 
     constructor(address _aizRegistry, address _intentBus) AIZOrchestrator(_aizRegistry) {
         intentBusAddress = _intentBus;
@@ -87,6 +91,19 @@ contract CompetitivePerceptionAIZ is AIZOrchestrator {
         competitor.transactionCount += 10; // Simulate finding 10 new transactions
         competitor.successRate = 95; // Simulate 95% success rate
         competitor.lastAnalyzed = block.timestamp;
+        
+        // Simulate MEV bot detection
+        if (competitor.transactionCount > 50 && competitor.detectedMEVBots == 0) {
+            competitor.detectedMEVBots = 1;
+            emit MEVBotDetected(_contractAddress, competitor.transactionCount);
+            
+            // Create alert for decoy strategy
+            createStrategicAlert(
+                "DECOY_NEEDED",
+                string(abi.encodePacked("MEV bot detected for competitor ", competitor.name, ". Decoy strategy recommended.")),
+                _contractAddress
+            );
+        }
         
         emit CompetitorAnalyzed(_contractAddress);
     }
@@ -124,7 +141,7 @@ contract CompetitivePerceptionAIZ is AIZOrchestrator {
         string memory _alertType,
         string memory _description,
         address _source
-    ) external onlyAuthorized {
+    ) public onlyAuthorized { // Changed to public to allow external calls
         alertCount++;
         StrategicAlert storage alert = strategicAlerts[alertCount];
         alert.id = alertCount;
@@ -162,6 +179,30 @@ contract CompetitivePerceptionAIZ is AIZOrchestrator {
         // In a real implementation, this would interact with the IntentBus contract
         // For now, we'll just log that it would happen
         // IntentBus(intentBusAddress).publishIntent(...);
+    }
+
+    /**
+     * @dev Set the FinancialDecoyAgent address
+     * @param _financialDecoyAgentAddress The address of the FinancialDecoyAgent
+     */
+    function setFinancialDecoyAgentAddress(address _financialDecoyAgentAddress) external onlyOwner {
+        financialDecoyAgentAddress = _financialDecoyAgentAddress;
+    }
+
+    /**
+     * @dev Request a decoy strategy for a competitor
+     * @param _competitor The competitor address
+     * @param _reason The reason for the decoy strategy
+     */
+    function requestDecoyStrategy(address _competitor, string memory _reason) external onlyAuthorized {
+        // Create alert for decoy strategy
+        createStrategicAlert(
+            "DECOY_NEEDED",
+            string(abi.encodePacked("Decoy strategy needed for competitor. Reason: ", _reason)),
+            _competitor
+        );
+        
+        emit DecoyStrategyNeeded(_competitor, _reason);
     }
 
     /**

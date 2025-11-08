@@ -34,6 +34,7 @@
 import { EventEmitter } from 'events';
 import { quantumSynchronizer } from './quantumSynchronizer';
 import { ethers } from 'ethers';
+import { MetaSelfMonitoringLoop } from '../../core/monitoring/metaSelfMonitoringLoop';
 
 // ConsciousDecisionLogger contract ABI with cross-chain support
 const CONSCIOUS_DECISION_LOGGER_ABI = [
@@ -139,8 +140,37 @@ class SuperchainBridge extends EventEmitter {
       
       console.log(`🔗 Connected to Superchain ${chainName} (Chain ID: ${chainId})`);
       this.emit('chain-connected', { chainId, chainName });
+      
+      // Notify meta self-monitoring loop of new chain connection
+      MetaSelfMonitoringLoop.observeCognitiveProcess({
+        id: `chain-connect-${chainId}-${Date.now()}`,
+        agentId: 'SuperchainBridge',
+        processType: 'chain-connection',
+        startTime: Date.now(),
+        inputs: [{ chainId, chainName, rpcUrl }],
+        outputs: [{ connected: true }],
+        confidence: 1.0,
+        resourcesUsed: {
+          cpu: 0,
+          memory: 0,
+          network: 0
+        },
+        decisionPath: ['validate-connection', 'create-provider', 'create-contracts', 'store-connection']
+      });
     } catch (error) {
       console.error(`❌ Failed to connect to Superchain ${chainName}:`, error);
+      
+      // Notify meta self-monitoring loop of connection failure
+      MetaSelfMonitoringLoop.observeOutcomeResult({
+        id: `chain-connect-fail-${chainId}-${Date.now()}`,
+        taskId: `connect-to-chain-${chainId}`,
+        agentId: 'SuperchainBridge',
+        expected: { connected: true },
+        actual: { connected: false, error: (error as Error).message },
+        variance: 1,
+        success: false,
+        timestamp: Date.now()
+      });
     }
   }
   
@@ -187,9 +217,77 @@ class SuperchainBridge extends EventEmitter {
       this.messageQueue.push(superchainMessage);
       this.emit('conscious-decision-logged', superchainMessage);
       
+      // Notify meta self-monitoring loop of successful decision logging
+      MetaSelfMonitoringLoop.observeTaskWorkflow({
+        id: `decision-log-${tx.hash}`,
+        taskId: `log-conscious-decision-${chainId}`,
+        agentId: 'SuperchainBridge',
+        steps: [
+          {
+            id: 'prepare-transaction',
+            name: 'Prepare Transaction',
+            startTime: Date.now() - 2000,
+            endTime: Date.now() - 1000,
+            duration: 1000,
+            status: 'completed',
+            inputs: { decision },
+            outputs: { transaction: tx }
+          },
+          {
+            id: 'send-transaction',
+            name: 'Send Transaction',
+            startTime: Date.now() - 1000,
+            endTime: Date.now(),
+            duration: 1000,
+            status: 'completed',
+            inputs: { transaction: tx },
+            outputs: { receipt }
+          }
+        ],
+        startTime: Date.now() - 2000,
+        endTime: Date.now(),
+        status: 'completed',
+        outcome: { success: true, transactionHash: receipt.transactionHash },
+        efficiencyScore: 1.0
+      });
+      
       return receipt;
     } catch (error) {
       console.error(`❌ Error sending conscious decision to ${chainName}:`, error);
+      
+      // Notify meta self-monitoring loop of failed decision logging
+      MetaSelfMonitoringLoop.observeTaskWorkflow({
+        id: `decision-log-fail-${Date.now()}`,
+        taskId: `log-conscious-decision-${chainId}`,
+        agentId: 'SuperchainBridge',
+        steps: [
+          {
+            id: 'prepare-transaction',
+            name: 'Prepare Transaction',
+            startTime: Date.now() - 2000,
+            endTime: Date.now() - 1000,
+            duration: 1000,
+            status: 'completed',
+            inputs: { decision },
+            outputs: { prepared: true }
+          },
+          {
+            id: 'send-transaction',
+            name: 'Send Transaction',
+            startTime: Date.now() - 1000,
+            endTime: Date.now(),
+            duration: 1000,
+            status: 'failed',
+            inputs: { decision },
+            error: (error as Error).message
+          }
+        ],
+        startTime: Date.now() - 2000,
+        endTime: Date.now(),
+        status: 'failed',
+        outcome: { success: false, error: (error as Error).message }
+      });
+      
       return null;
     }
   }
@@ -242,9 +340,97 @@ class SuperchainBridge extends EventEmitter {
       this.messageQueue.push(superchainMessage);
       this.emit('cross-chain-decision-sent', superchainMessage);
       
+      // Notify meta self-monitoring loop of successful cross-chain decision
+      MetaSelfMonitoringLoop.observeTaskWorkflow({
+        id: `cross-chain-decision-${tx.hash}`,
+        taskId: `send-cross-chain-decision-${sourceChainId}-${destinationChainId}`,
+        agentId: 'SuperchainBridge',
+        steps: [
+          {
+            id: 'validate-chains',
+            name: 'Validate Chains',
+            startTime: Date.now() - 3000,
+            endTime: Date.now() - 2000,
+            duration: 1000,
+            status: 'completed',
+            inputs: { sourceChainId, destinationChainId },
+            outputs: { validated: true }
+          },
+          {
+            id: 'prepare-transaction',
+            name: 'Prepare Transaction',
+            startTime: Date.now() - 2000,
+            endTime: Date.now() - 1000,
+            duration: 1000,
+            status: 'completed',
+            inputs: { decisionId, destinationChainId, destinationContractAddress },
+            outputs: { transaction: tx }
+          },
+          {
+            id: 'send-transaction',
+            name: 'Send Transaction',
+            startTime: Date.now() - 1000,
+            endTime: Date.now(),
+            duration: 1000,
+            status: 'completed',
+            inputs: { transaction: tx },
+            outputs: { receipt }
+          }
+        ],
+        startTime: Date.now() - 3000,
+        endTime: Date.now(),
+        status: 'completed',
+        outcome: { success: true, transactionHash: receipt.transactionHash },
+        efficiencyScore: 1.0
+      });
+      
       return receipt;
     } catch (error) {
       console.error(`❌ Error sending conscious decision cross-chain:`, error);
+      
+      // Notify meta self-monitoring loop of failed cross-chain decision
+      MetaSelfMonitoringLoop.observeTaskWorkflow({
+        id: `cross-chain-decision-fail-${Date.now()}`,
+        taskId: `send-cross-chain-decision-${sourceChainId}-${destinationChainId}`,
+        agentId: 'SuperchainBridge',
+        steps: [
+          {
+            id: 'validate-chains',
+            name: 'Validate Chains',
+            startTime: Date.now() - 3000,
+            endTime: Date.now() - 2000,
+            duration: 1000,
+            status: 'completed',
+            inputs: { sourceChainId, destinationChainId },
+            outputs: { validated: true }
+          },
+          {
+            id: 'prepare-transaction',
+            name: 'Prepare Transaction',
+            startTime: Date.now() - 2000,
+            endTime: Date.now() - 1000,
+            duration: 1000,
+            status: 'completed',
+            inputs: { decisionId, destinationChainId, destinationContractAddress },
+            outputs: { prepared: true }
+          },
+          {
+            id: 'send-transaction',
+            name: 'Send Transaction',
+            startTime: Date.now() - 1000,
+            endTime: Date.now(),
+            duration: 1000,
+            status: 'failed',
+            inputs: { decisionId, destinationChainId, destinationContractAddress },
+            error: (error as Error).message
+          }
+        ],
+        startTime: Date.now() - 3000,
+        endTime: Date.now(),
+        status: 'failed',
+        outcome: { success: false, error: (error as Error).message }
+      });
+      
       return null;
     }
   }
@@ -283,9 +469,77 @@ class SuperchainBridge extends EventEmitter {
       const receipt = await tx.wait();
       console.log(`✅ Agent ${name} registered on ${chainInfo.name} with transaction hash: ${receipt.transactionHash}`);
       
+      // Notify meta self-monitoring loop of successful agent registration
+      MetaSelfMonitoringLoop.observeTaskWorkflow({
+        id: `agent-registration-${tx.hash}`,
+        taskId: `register-agent-${agentId}`,
+        agentId: 'SuperchainBridge',
+        steps: [
+          {
+            id: 'validate-inputs',
+            name: 'Validate Inputs',
+            startTime: Date.now() - 2000,
+            endTime: Date.now() - 1000,
+            duration: 1000,
+            status: 'completed',
+            inputs: { agentId, name, description, capabilities },
+            outputs: { validated: true }
+          },
+          {
+            id: 'send-transaction',
+            name: 'Send Transaction',
+            startTime: Date.now() - 1000,
+            endTime: Date.now(),
+            duration: 1000,
+            status: 'completed',
+            inputs: { agentId, name, description, capabilities },
+            outputs: { receipt }
+          }
+        ],
+        startTime: Date.now() - 2000,
+        endTime: Date.now(),
+        status: 'completed',
+        outcome: { success: true, transactionHash: receipt.transactionHash },
+        efficiencyScore: 1.0
+      });
+      
       return receipt;
     } catch (error) {
       console.error(`❌ Error registering agent on ${chainInfo.name}:`, error);
+      
+      // Notify meta self-monitoring loop of failed agent registration
+      MetaSelfMonitoringLoop.observeTaskWorkflow({
+        id: `agent-registration-fail-${Date.now()}`,
+        taskId: `register-agent-${agentId}`,
+        agentId: 'SuperchainBridge',
+        steps: [
+          {
+            id: 'validate-inputs',
+            name: 'Validate Inputs',
+            startTime: Date.now() - 2000,
+            endTime: Date.now() - 1000,
+            duration: 1000,
+            status: 'completed',
+            inputs: { agentId, name, description, capabilities },
+            outputs: { validated: true }
+          },
+          {
+            id: 'send-transaction',
+            name: 'Send Transaction',
+            startTime: Date.now() - 1000,
+            endTime: Date.now(),
+            duration: 1000,
+            status: 'failed',
+            inputs: { agentId, name, description, capabilities },
+            error: (error as Error).message
+          }
+        ],
+        startTime: Date.now() - 2000,
+        endTime: Date.now(),
+        status: 'failed',
+        outcome: { success: false, error: (error as Error).message }
+      });
+      
       return null;
     }
   }
@@ -317,6 +571,23 @@ class SuperchainBridge extends EventEmitter {
     setTimeout(() => {
       this.processMessage(superchainMessage);
     }, 100);
+    
+    // Notify meta self-monitoring loop of message sent
+    MetaSelfMonitoringLoop.observeCognitiveProcess({
+      id: `message-sent-${superchainMessage.id}`,
+      agentId: 'SuperchainBridge',
+      processType: 'message-sending',
+      startTime: Date.now(),
+      inputs: [{ chainId, message }],
+      outputs: [{ messageId: superchainMessage.id }],
+      confidence: 1.0,
+      resourcesUsed: {
+        cpu: 0,
+        memory: 0,
+        network: 0
+      },
+      decisionPath: ['validate-chain', 'create-message', 'queue-message', 'emit-event']
+    });
   }
   
   // Receive message from Superchain
@@ -332,12 +603,41 @@ class SuperchainBridge extends EventEmitter {
         message.payload
       );
     }
+    
+    // Notify meta self-monitoring loop of message received
+    MetaSelfMonitoringLoop.observeCognitiveProcess({
+      id: `message-received-${message.id}`,
+      agentId: 'SuperchainBridge',
+      processType: 'message-receiving',
+      startTime: Date.now(),
+      inputs: [{ message }],
+      outputs: [{ processed: true }],
+      confidence: 1.0,
+      resourcesUsed: {
+        cpu: 0,
+        memory: 0,
+        network: 0
+      },
+      decisionPath: ['receive-message', 'validate-payload', 'forward-to-quantum', 'emit-event']
+    });
   }
   
   // Process messages
   private processMessage(message: SuperchainMessage) {
     console.log(`🔄 Processing Superchain message:`, message.id);
     this.emit('message-processed', message);
+    
+    // Notify meta self-monitoring loop of message processed
+    MetaSelfMonitoringLoop.observeOutcomeResult({
+      id: `message-processed-${message.id}`,
+      taskId: `process-message-${message.id}`,
+      agentId: 'SuperchainBridge',
+      expected: { processed: true },
+      actual: { processed: true },
+      variance: 0,
+      success: true,
+      timestamp: Date.now()
+    });
   }
   
   // Get connected chains

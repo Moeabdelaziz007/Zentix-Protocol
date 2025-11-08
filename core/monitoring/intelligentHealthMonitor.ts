@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import { EmailService } from '../communication/emailService';
 import { SlackNotificationChannel, DiscordNotificationChannel } from './notificationChannels';
+import { MetaSelfMonitoringLoop } from './metaSelfMonitoringLoop';
 
 // Health monitoring configuration
 interface HealthCheckConfig {
@@ -298,6 +299,18 @@ class IntelligentHealthMonitor extends EventEmitter {
     
     // Log recovery
     console.log(`✅ Service ${name} recovered after ${health.consecutiveFailures} failures`);
+    
+    // Notify meta self-monitoring loop of service recovery
+    MetaSelfMonitoringLoop.observeOutcomeResult({
+      id: `recovery-${name}-${Date.now()}`,
+      taskId: `health-check-${name}`,
+      agentId: 'IntelligentHealthMonitor',
+      expected: { status: 'healthy' },
+      actual: { status: health.status },
+      variance: health.consecutiveFailures,
+      success: health.status === 'healthy',
+      timestamp: Date.now()
+    });
   }
 
   // Create and handle alerts
@@ -332,6 +345,18 @@ class IntelligentHealthMonitor extends EventEmitter {
     }
 
     console.log(`🚨 Alert created: ${serviceName} - ${severity} - ${error}`);
+    
+    // Notify meta self-monitoring loop of alert
+    MetaSelfMonitoringLoop.observeOutcomeResult({
+      id: `alert-${serviceName}-${Date.now()}`,
+      taskId: `health-check-${serviceName}`,
+      agentId: 'IntelligentHealthMonitor',
+      expected: { status: 'healthy' },
+      actual: { status: health.status, error },
+      variance: health.consecutiveFailures,
+      success: false,
+      timestamp: Date.now()
+    });
   }
 
   // Send notification through appropriate channels
@@ -566,6 +591,50 @@ ${this.getRecentAlertHistory(alert.service)}
     await this.sendDailyReport(report);
     
     console.log(`📊 Daily report generated: ${overallHealth.status} - ${overallHealth.averageUptime.toFixed(2)}% uptime`);
+    
+    // Notify meta self-monitoring loop of daily report
+    MetaSelfMonitoringLoop.observeTaskWorkflow({
+      id: `daily-report-${Date.now()}`,
+      taskId: 'daily-health-report',
+      agentId: 'IntelligentHealthMonitor',
+      steps: [
+        {
+          id: 'data-collection',
+          name: 'Data Collection',
+          startTime: Date.now() - 30000,
+          endTime: Date.now() - 15000,
+          duration: 15000,
+          status: 'completed',
+          inputs: { services: overallHealth.services.length },
+          outputs: { collected: true }
+        },
+        {
+          id: 'analysis',
+          name: 'Health Analysis',
+          startTime: Date.now() - 15000,
+          endTime: Date.now() - 5000,
+          duration: 10000,
+          status: 'completed',
+          inputs: { healthData: overallHealth },
+          outputs: { analysisComplete: true }
+        },
+        {
+          id: 'report-generation',
+          name: 'Report Generation',
+          startTime: Date.now() - 5000,
+          endTime: Date.now(),
+          duration: 5000,
+          status: 'completed',
+          inputs: { analysis: overallHealth },
+          outputs: { report }
+        }
+      ],
+      startTime: Date.now() - 30000,
+      endTime: Date.now(),
+      status: 'completed',
+      outcome: { success: true, report },
+      efficiencyScore: 1.0
+    });
   }
 
   // Get alerts summary for the day

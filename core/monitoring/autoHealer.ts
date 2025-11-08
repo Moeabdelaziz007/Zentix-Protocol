@@ -12,6 +12,7 @@ import { AgentLogger, LogLevel } from '../utils/agentLogger';
 import { spawn } from 'child_process';
 import { promisify } from 'util';
 import { exec } from 'child_process';
+import { MetaSelfMonitoringLoop } from './metaSelfMonitoringLoop';
 
 const execAsync = promisify(exec);
 
@@ -265,6 +266,40 @@ export class AutoHealer {
 
               rule.last_executed = now;
 
+              // Notify meta self-monitoring loop of healing action
+              MetaSelfMonitoringLoop.observeTaskWorkflow({
+                id: `healing-${action.id}`,
+                taskId: action.id,
+                agentId: 'AutoHealer',
+                steps: [
+                  {
+                    id: 'condition-check',
+                    name: 'Condition Check',
+                    startTime: now - 1000,
+                    endTime: now,
+                    duration: 1000,
+                    status: 'completed',
+                    inputs: { rule: rule.name },
+                    outputs: { conditionMet: true }
+                  },
+                  {
+                    id: 'action-execution',
+                    name: 'Action Execution',
+                    startTime: now,
+                    endTime: now + 500,
+                    duration: 500,
+                    status: 'completed',
+                    inputs: { action: rule.action.toString() },
+                    outputs: { success: true }
+                  }
+                ],
+                startTime: now - 1000,
+                endTime: now + 500,
+                status: 'completed',
+                outcome: { success: true },
+                efficiencyScore: 1.0
+              });
+
               AgentLogger.log(
                 LogLevel.SUCCESS,
                 'AutoHealer',
@@ -299,6 +334,39 @@ export class AutoHealer {
         };
 
         this.healingHistory.push(action);
+
+        // Notify meta self-monitoring loop of failed healing action
+        MetaSelfMonitoringLoop.observeTaskWorkflow({
+          id: `healing-${action.id}`,
+          taskId: action.id,
+          agentId: 'AutoHealer',
+          steps: [
+            {
+              id: 'condition-check',
+              name: 'Condition Check',
+              startTime: now - 1000,
+              endTime: now,
+              duration: 1000,
+              status: 'completed',
+              inputs: { rule: rule.name },
+              outputs: { conditionMet: true }
+            },
+            {
+              id: 'action-execution',
+              name: 'Action Execution',
+              startTime: now,
+              endTime: now + 500,
+              duration: 500,
+              status: 'failed',
+              inputs: { action: rule.action.toString() },
+              error: (error as Error).message
+            }
+          ],
+          startTime: now - 1000,
+          endTime: now + 500,
+          status: 'failed',
+          outcome: { success: false, error: (error as Error).message }
+        });
       }
     }
   }

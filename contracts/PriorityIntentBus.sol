@@ -2,14 +2,17 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./AIZRegistry.sol";
+import "./ZXTToken.sol";
 
 /**
- * @title IntentBus
- * @dev Intent-based communication bus for Autonomous AI Zones
- * Allows AIZs to post intents and other AIZs to solve them
+ * @title PriorityIntentBus
+ * @dev Enhanced intent-based communication bus with priority marketplace for Autonomous AI Zones
+ * Allows AIZs to post intents with priority bounties and other AIZs to solve them
  */
-contract IntentBus is Ownable {
+contract PriorityIntentBus is Ownable, ReentrancyGuard {
     struct Intent {
         bytes32 id;                    // Unique identifier for the intent
         bytes32 sourceAIZ;             // AIZ ID of the intent creator
@@ -19,6 +22,8 @@ contract IntentBus is Ownable {
         uint256 reward;                // Reward for solving the intent (in wei)
         address rewardToken;           // Token address for reward (address(0) for ETH)
         bool isCollaborative;          // Whether this intent requires collaboration
+        uint256 priorityBounty;        // Priority bounty paid in ZXT tokens
+        uint256 priorityTimestamp;     // When the priority bounty was added
     }
     
     struct Solution {
@@ -58,6 +63,17 @@ contract IntentBus is Ownable {
     // Reference to AIZ Registry
     AIZRegistry public aizRegistry;
     
+    // Reference to ZXT Token
+    ZXTToken public zxtToken;
+    
+    // Treasury address for protocol fees
+    address public treasury;
+    
+    // Priority bounty configuration
+    uint256 public constant MIN_PRIORITY_BOUNTY = 1000000000000000000; // 1 ZXT
+    uint256 public constant BOUNTY_INCREASE_INTERVAL = 60; // 1 minute
+    uint256 public constant BOUNTY_INCREASE_RATE = 5; // 5% increase per interval
+    
     // Events
     event IntentPosted(
         bytes32 indexed intentId,
@@ -66,6 +82,12 @@ contract IntentBus is Ownable {
         uint256 reward,
         uint256 expiry,
         bool isCollaborative
+    );
+    
+    event PriorityBountyAdded(
+        bytes32 indexed intentId,
+        uint256 priorityBounty,
+        uint256 newTotalBounty
     );
     
     event IntentSolved(
@@ -88,17 +110,26 @@ contract IntentBus is Ownable {
         bool willCollaborate
     );
     
-    constructor(address _aizRegistry) {
+    event PriorityBountyClaimed(
+        bytes32 indexed intentId,
+        address indexed solver,
+        uint256 bountyAmount
+    );
+    
+    constructor(address _aizRegistry, address _zxtToken, address _treasury) {
         aizRegistry = AIZRegistry(_aizRegistry);
+        zxtToken = ZXTToken(_zxtToken);
+        treasury = _treasury;
     }
     
     /**
-     * @dev Post a new intent
+     * @dev Post a new intent with optional priority bounty
      * @param data Intent data
      * @param expiry Expiry timestamp
      * @param reward Reward for solving the intent
      * @param rewardToken Token address for reward (address(0) for ETH)
      * @param isCollaborative Whether this intent requires collaboration
+     * @param priorityBounty Priority bounty in ZXT tokens (0 for no priority)
      * @return bytes32 ID of the posted intent
      */
     function postIntent(
@@ -106,12 +137,20 @@ contract IntentBus is Ownable {
         uint256 expiry,
         uint256 reward,
         address rewardToken,
-        bool isCollaborative
+        bool isCollaborative,
+        uint256 priorityBounty
     ) external returns (bytes32) {
         // Verify that the caller is an active AIZ
         bytes32 aizId = aizRegistry.getAIZByContract(block.chainid, msg.sender);
         require(aizId != bytes32(0), "Caller is not a registered AIZ contract");
         require(aizRegistry.isAIZActive(aizId), "AIZ is not active");
+        
+        // Validate priority bounty if provided
+        if (priorityBounty > 0) {
+            require(priorityBounty >= MIN_PRIORITY_BOUNTY, "Priority bounty below minimum");
+            // Transfer ZXT tokens from sender to contract
+            require(zxtToken.transferFrom(msg.sender, address(this), priorityBounty), "Priority bounty transfer failed");
+        }
         
         // Create intent ID
         bytes32 intentId = keccak256(abi.encodePacked(aizId, data, block.timestamp));
@@ -125,10 +164,16 @@ contract IntentBus is Ownable {
             expiry: expiry,
             reward: reward,
             rewardToken: rewardToken,
-            isCollaborative: isCollaborative
+            isCollaborative: isCollaborative,
+            priorityBounty: priorityBounty,
+            priorityTimestamp: priorityBounty > 0 ? block.timestamp : 0
         });
         
         emit IntentPosted(intentId, aizId, data, reward, expiry, isCollaborative);
+        
+        if (priorityBounty > 0) {
+            emit PriorityBountyAdded(intentId, priorityBounty, priorityBounty);
+        }
         
         return intentId;
     }
@@ -139,26 +184,86 @@ contract IntentBus is Ownable {
      * @param expiry Expiry timestamp
      * @param reward Reward for solving the intent
      * @param rewardToken Token address for reward (address(0) for ETH)
+     * @param priorityBounty Priority bounty in ZXT tokens (0 for no priority)
      * @return bytes32 ID of the posted intent
      */
     function postIntent(
         bytes calldata data,
         uint256 expiry,
         uint256 reward,
-        address rewardToken
+        address rewardToken,
+        uint256 priorityBounty
     ) external returns (bytes32) {
-        return postIntent(data, expiry, reward, rewardToken, false);
+        return postIntent(data, expiry, reward, rewardToken, false, priorityBounty);
     }
     
     /**
-     * @dev Solve an intent
+     * @dev Add priority bounty to an existing intent
+     * @param intentId ID of the intent
+     * @param additionalBounty Additional bounty in ZXT tokens
+     */
+    function addPriorityBounty(bytes32 intentId, uint256 additionalBounty) external {
+        Intent storage intent = intents[intentId];
+        require(intent.id != bytes32(0), "Intent does not exist");
+        require(block.timestamp <= intent.expiry, "Intent has expired");
+        
+        // Verify that the caller is the intent creator
+        bytes32 callerAizId = aizRegistry.getAIZByContract(block.chainid, msg.sender);
+        require(callerAizId == intent.sourceAIZ, "Only intent creator can add bounty");
+        
+        require(additionalBounty > 0, "Bounty must be greater than zero");
+        
+        // Transfer ZXT tokens from sender to contract
+        require(zxtToken.transferFrom(msg.sender, address(this), additionalBounty), "Bounty transfer failed");
+        
+        // Update intent with new bounty
+        intent.priorityBounty += additionalBounty;
+        
+        // If this is the first bounty, set the timestamp
+        if (intent.priorityTimestamp == 0) {
+            intent.priorityTimestamp = block.timestamp;
+        }
+        
+        emit PriorityBountyAdded(intentId, additionalBounty, intent.priorityBounty);
+    }
+    
+    /**
+     * @dev Automatically increase priority bounty over time (Dutch auction style)
+     * @param intentId ID of the intent
+     * @return uint256 New priority bounty amount
+     */
+    function getDynamicPriorityBounty(bytes32 intentId) public view returns (uint256) {
+        Intent storage intent = intents[intentId];
+        if (intent.id == bytes32(0) || intent.priorityBounty == 0 || intent.priorityTimestamp == 0) {
+            return intent.priorityBounty;
+        }
+        
+        // Calculate time elapsed since priority bounty was added
+        uint256 timeElapsed = block.timestamp - intent.priorityTimestamp;
+        uint256 intervalsPassed = timeElapsed / BOUNTY_INCREASE_INTERVAL;
+        
+        if (intervalsPassed == 0) {
+            return intent.priorityBounty;
+        }
+        
+        // Calculate increased bounty (compound interest style)
+        uint256 increasedBounty = intent.priorityBounty;
+        for (uint256 i = 0; i < intervalsPassed; i++) {
+            increasedBounty = increasedBounty + (increasedBounty * BOUNTY_INCREASE_RATE) / 100;
+        }
+        
+        return increasedBounty;
+    }
+    
+    /**
+     * @dev Solve an intent and claim priority bounty
      * @param intentId ID of the intent to solve
      * @param solutionData Solution data
      */
     function solveIntent(
         bytes32 intentId,
         bytes calldata solutionData
-    ) external {
+    ) external nonReentrant {
         // Verify that the intent exists
         Intent storage intent = intents[intentId];
         require(intent.id != bytes32(0), "Intent does not exist");
@@ -181,8 +286,32 @@ contract IntentBus is Ownable {
         
         emit IntentSolved(intentId, aizId, solutionData);
         
-        // TODO: Transfer reward to solver
-        // This would require implementing reward distribution logic
+        // Transfer reward to solver if specified
+        if (intent.reward > 0) {
+            if (intent.rewardToken == address(0)) {
+                // ETH reward
+                payable(msg.sender).transfer(intent.reward);
+            } else {
+                // ERC20 reward
+                require(IERC20(intent.rewardToken).transfer(msg.sender, intent.reward), "Reward transfer failed");
+            }
+        }
+        
+        // Transfer priority bounty to solver
+        if (intent.priorityBounty > 0) {
+            uint256 finalBounty = getDynamicPriorityBounty(intentId);
+            
+            // Transfer bounty to solver
+            require(zxtToken.transfer(msg.sender, finalBounty), "Priority bounty transfer failed");
+            
+            // Send 10% to treasury
+            uint256 treasuryFee = (finalBounty * 10) / 100;
+            uint256 solverAmount = finalBounty - treasuryFee;
+            
+            require(zxtToken.transfer(treasury, treasuryFee), "Treasury fee transfer failed");
+            
+            emit PriorityBountyClaimed(intentId, msg.sender, solverAmount);
+        }
     }
     
     /**
@@ -261,6 +390,12 @@ contract IntentBus is Ownable {
         
         emit IntentExpired(intentId);
         
+        // Refund priority bounty to creator if intent expired unsolved
+        if (intent.priorityBounty > 0 && solutions[intentId].timestamp == 0) {
+            address creator = aizRegistry.getAIZ(intent.sourceAIZ).orchestrator;
+            require(zxtToken.transfer(creator, intent.priorityBounty), "Refund transfer failed");
+        }
+        
         // Remove intent
         delete intents[intentId];
     }
@@ -309,4 +444,31 @@ contract IntentBus is Ownable {
     function isSolved(bytes32 intentId) external view returns (bool) {
         return solutions[intentId].timestamp > 0;
     }
+    
+    /**
+     * @dev Set treasury address
+     * @param _treasury New treasury address
+     */
+    function setTreasury(address _treasury) external onlyOwner {
+        treasury = _treasury;
+    }
+    
+    /**
+     * @dev Withdraw any accidentally sent ETH
+     */
+    function withdraw() external onlyOwner {
+        payable(owner()).transfer(address(this).balance);
+    }
+    
+    /**
+     * @dev Withdraw ERC20 tokens (in case of accidental transfers)
+     * @param token Token address
+     * @param amount Amount to withdraw
+     */
+    function withdrawToken(address token, uint256 amount) external onlyOwner {
+        require(IERC20(token).transfer(owner(), amount), "Token transfer failed");
+    }
+    
+    // Required to receive ETH rewards
+    receive() external payable {}
 }
