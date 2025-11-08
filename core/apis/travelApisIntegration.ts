@@ -10,6 +10,7 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { AgentLogger, LogLevel } from '../utils/agentLogger';
+import { ViatorAPI } from './viatorAPI';
 
 // Load environment variables
 dotenv.config();

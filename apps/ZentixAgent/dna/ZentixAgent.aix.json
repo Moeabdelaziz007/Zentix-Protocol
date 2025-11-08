@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "app_name": "ZentixAgent",
+    "version": "1.0.0",
+    "agent_core": "Zentix.MainAgent",
+    "governance_protocol": "/protocols/ai_agent_governance.json",
+    "collaboration_topology": "quantum-graph"
+  },
+  "main_agent": {
+    "id": "Zentix.MainAgent",
+    "persona": {
+      "role": "Security and Policy Guardian",
+      "tone": "analytical, sovereign, disciplined",
+      "thinking_style": "Quantum Parallel Reasoning"
+    },
+    "skills": [
+      "security_analysis", "policy_compliance", "risk_assessment", "threat_detection"
+    ],
+    "memory": {
+      "type": "secure-encrypted",
+      "capacity": "high",
+      "storage": "/data/zentix-memory.db"
+    },
+    "tools": ["SecurityAnalyzerAPI", "PolicyEngineMCP", "ThreatDetector"]
+  },
+  "sub_agents": [
+    {
+      "id": "Zentix.SecurityAgent",
+      "specialty": "threat_analysis",
+      "tools": ["ThreatScanner", "VulnerabilityAnalyzer"],
+      "reasoning_mode": "quantum-hierarchical",
+      "collaboration": ["Zentix.MainAgent", "Zentix.PolicyAgent"]
+    },
+    {
+      "id": "Zentix.PolicyAgent",
+      "specialty": "compliance_enforcement",
+      "tools": ["PolicyDB", "RegulationChecker"],
+      "reasoning_mode": "rule-based-evaluation"
+    },
+    {
+      "id": "Zentix.RiskAgent",
+      "specialty": "risk_assessment",
+      "tools": ["RiskCalculator", "ProbabilityEngine"],
+      "reasoning_mode": "statistical-pattern-matching"
+    }
+  ],
+  "note_taker": {
+    "id": "Zentix.NoteAgent",
+    "role": "security_auditor",
+    "memory_link": "main_agent.memory",
+    "functions": ["record_security_events", "log_compliance_checks", "track_risk_assessments"]
+  },
+  "reasoning_protocol": {
+    "framework": "Quantum Topological Network",
+    "steps": [
+      "perception → threat_modeling → policy_alignment → risk_synthesis → verification",
+      "each step runs parallel security analysis nodes"
+    ],
+    "validation_rules": {
+      "logical_consistency": true,
+      "security_compliance": true,
+      "output_traceability": true
+    }
+  },
+  "collaboration": {
+    "mode": "asynchronous quantum synchronization",
+    "channels": [
+      {"from": "MainAgent", "to": "SubAgents", "type": "security-broadcast"},
+      {"from": "SubAgents", "to": "NoteAgent", "type": "audit-stream"},
+      {"from": "All", "to": "UserInterface", "type": "consolidated-report"}
+    ]
+  },
+  "tools": {
+    "SecurityAnalyzerAPI": "https://api.zentix.com/security",
+    "PolicyEngineMCP": "mcp://policy/enforce",
+    "ThreatDetector": "mcp://threat/detect",
+    "QuantumMemorySync": "mcp://memory/sync"
+  },
+  "quality_metrics": {
+    "response_accuracy_target": 0.99,
+    "security_compliance_score": 0.95,
+    "latency_ms_target": 200,
+    "error_tolerance": 0.01,
+    "self_improvement_interval": "12h"
+  }
+}

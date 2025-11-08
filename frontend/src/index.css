@@ -78,6 +78,29 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  
+  /* AIOS Theme - Quantum Colors */
+  --aiz-primary: #00D9FF;
+  --aiz-secondary: #B47EFF;
+  --aiz-accent: #10B981;
+  --aiz-consciousness-fulfilled: #4ADE80;
+  --aiz-consciousness-focused: #60A5FA;
+  --aiz-consciousness-curious: #FBBF24;
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: 20px;
+  
+  /* Quantum Glow */
+  --glow-cyan: 0 0 20px rgba(0, 217, 255, 0.4);
+  --glow-purple: 0 0 20px rgba(180, 126, 255, 0.4);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.4);
+  
+  /* Quantum Background */
+  --quantum-bg: oklch(0.09 0 0);
+  --quantum-surface: oklch(0.13 0 0);
+  --quantum-border: oklch(0.2 0 0);
 }
 
 /* Fallback for no data-theme attribute (use light theme) */
@@ -158,6 +181,17 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-quantum-bg: var(--quantum-bg);
+  --color-quantum-surface: var(--quantum-surface);
+  --color-quantum-border: var(--quantum-border);
+  --color-aiz-primary: var(--aiz-primary);
+  --color-aiz-secondary: var(--aiz-secondary);
+  --color-aiz-accent: var(--aiz-accent);
+  --color-aiz-consciousness-fulfilled: var(--aiz-consciousness-fulfilled);
+  --color-aiz-consciousness-focused: var(--aiz-consciousness-focused);
+  --color-aiz-consciousness-curious: var(--aiz-consciousness-curious);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
 }
 
 * {
@@ -626,5 +660,147 @@ body {
   .glass-card {
     background: var(--card);
     border: 2px solid var(--border);
+  }
+}
+
+/* Quantum Governance Custom Utilities */
+@utility glow-cyan {
+  box-shadow: 0 0 10px var(--quantum-cyan-glow);
+}
+
+@utility glow-purple {
+  box-shadow: 0 0 10px var(--quantum-purple-glow);
+}
+
+@utility glow-consciousness-fulfilled {
+  box-shadow: 0 0 8px oklch(0.7 0.18 145 / 0.4);
+}
+
+@utility glow-consciousness-focused {
+  box-shadow: 0 0 8px oklch(0.7 0.15 195 / 0.4);
+}
+
+@utility glow-consciousness-curious {
+  box-shadow: 0 0 8px oklch(0.8 0.15 85 / 0.4);
+}
+
+/* AIOS Custom Utilities */
+@utility aiz-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+
+@utility aiz-glow-cyan {
+  box-shadow: var(--glow-cyan);
+}
+
+@utility aiz-glow-purple {
+  box-shadow: var(--glow-purple);
+}
+
+@utility aiz-glow-green {
+  box-shadow: var(--glow-green);
+}
+
+@utility aiz-gradient-primary {
+  background: linear-gradient(135deg, var(--aiz-primary) 0%, var(--aiz-secondary) 100%);
+}
+
+@utility aiz-gradient-consciousness {
+  background: linear-gradient(135deg, var(--aiz-consciousness-fulfilled) 0%, var(--aiz-consciousness-focused) 50%, var(--aiz-consciousness-curious) 100%);
+}
+
+@utility aiz-border-glow {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--aiz-primary), var(--aiz-secondary));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.6;
+  }
+}
+
+@utility quantum-pulse {
+  animation: quantumPulse 2s ease-in-out infinite;
+}
+
+@keyframes quantumPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--aiz-primary), 0 0 20px var(--aiz-primary);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--aiz-primary), 0 0 40px var(--aiz-primary);
+  }
+}
+
+@utility consciousness-pulse {
+  animation: consciousnessPulse 3s ease-in-out infinite;
+}
+
+@keyframes consciousnessPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@utility float-gentle {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  66% {
+    transform: translateY(-5px) translateX(-5px);
+  }
+}
+
+@utility gradient-shift {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.font-mono-code {
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+@utility flash-cyan {
+  animation: flashCyan 0.5s ease-out;
+}
+
+@keyframes flashCyan {
+  0% {
+    background-color: var(--quantum-cyan-glow);
+  }
+  100% {
+    background-color: transparent;
   }
 }

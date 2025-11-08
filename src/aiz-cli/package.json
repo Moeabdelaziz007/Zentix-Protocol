@@ -1,0 +1,35 @@
+{
+  "name": "@zentix/aiz-cli",
+  "version": "1.0.0",
+  "description": "AI Zone (AIZ) Command Line Interface",
+  "main": "dist/index.js",
+  "bin": {
+    "z-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx index.ts",
+    "test": "vitest"
+  },
+  "keywords": [
+    "ai",
+    "zone",
+    "aiz",
+    "cli",
+    "autonomous",
+    "organization"
+  ],
+  "author": "Zentix Protocol",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^9.0.0",
+    "fs-extra": "^11.1.1",
+    "tar": "^6.1.13"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.1",
+    "@types/tar": "^6.1.5",
+    "tsx": "^3.12.7",
+    "typescript": "^5.0.0"
+  }
+}

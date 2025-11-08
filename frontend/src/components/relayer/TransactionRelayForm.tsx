@@ -37,7 +37,7 @@ export function TransactionRelayForm({ onSubmit }: TransactionRelayFormProps) {
               id="from"
               placeholder="0x..."
               value={formData.from}
-              onChange={(e) => setFormData({ ...formData, from: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, from: e.target.value })}
               required
             />
           </div>
@@ -47,7 +47,7 @@ export function TransactionRelayForm({ onSubmit }: TransactionRelayFormProps) {
               id="to"
               placeholder="0x..."
               value={formData.to}
-              onChange={(e) => setFormData({ ...formData, to: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, to: e.target.value })}
               required
             />
           </div>
@@ -57,7 +57,7 @@ export function TransactionRelayForm({ onSubmit }: TransactionRelayFormProps) {
               id="data"
               placeholder="0x..."
               value={formData.data}
-              onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, data: e.target.value })}
               required
             />
           </div>
@@ -67,7 +67,7 @@ export function TransactionRelayForm({ onSubmit }: TransactionRelayFormProps) {
               id="signature"
               placeholder="0x..."
               value={formData.signature}
-              onChange={(e) => setFormData({ ...formData, signature: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, signature: e.target.value })}
               required
             />
           </div>
@@ -77,7 +77,7 @@ export function TransactionRelayForm({ onSubmit }: TransactionRelayFormProps) {
               id="nonce"
               type="number"
               value={formData.nonce}
-              onChange={(e) => setFormData({ ...formData, nonce: parseInt(e.target.value) || 0 })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, nonce: parseInt(e.target.value) || 0 })}
               required
             />
           </div>

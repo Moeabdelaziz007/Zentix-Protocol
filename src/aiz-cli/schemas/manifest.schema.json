@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AI Zone Manifest",
+  "description": "Manifest schema for AI Zone (.aiz) packages",
+  "type": "object",
+  "required": ["name", "version", "type"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the AI Zone"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version of the AI Zone",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "type": {
+      "type": "string",
+      "description": "Type of the AI Zone",
+      "enum": ["master", "subzone", "agent", "tool", "service"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the AI Zone"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author or organization of the AI Zone"
+    },
+    "license": {
+      "type": "string",
+      "description": "License of the AI Zone"
+    },
+    "entryPoint": {
+      "type": "string",
+      "description": "Entry point script for the zone"
+    },
+    "dependencies": {
+      "type": "object",
+      "description": "Dependencies required by the zone",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "services": {
+      "type": "array",
+      "description": "Services provided by this zone",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "agents": {
+      "type": "array",
+      "description": "Agents included in this zone",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "config": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "description": "Tools included in this zone",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "entryPoint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "description": "Governance model for the zone",
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["autonomous", "hybrid", "controlled"]
+        },
+        "votingThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "upgradePolicy": {
+          "type": "string",
+          "enum": ["automatic", "voting", "controlled"]
+        }
+      }
+    },
+    "treasury": {
+      "type": "object",
+      "description": "Treasury configuration",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "allocation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "riskManagement": {
+    "maxSlippage": 0.5,
+    "maxPositionSize": 1000000,
+    "maxDrawdown": 10,
+    "stopLossPercentage": 5,
+    "positionCorrelationLimit": 0.8
+  },
+  "capitalAllocation": {
+    "maxCapitalPerTrade": 50000,
+    "maxCapitalPerProtocol": 250000,
+    "diversificationRatio": 0.75
+  },
+  "executionParameters": {
+    "gasPriceLimit": 200,
+    "maxTransactionTime": 30,
+    "retryAttempts": 3
+  },
+  "protocolWhitelist": [
+    "Aave",
+    "Balancer",
+    "dYdX",
+    "Uniswap"
+  ],
+  "protocolBlacklist": [
+    "Compound",
+    "MakerDAO"
+  ],
+  "lastUpdated": "2023-12-15T10:30:00Z",
+  "version": "1.0.0"
+}

@@ -1,25 +1,32 @@
 import { useState } from 'react';
-import {
-  BookOpen,
-  FileText,
-  Link,
-  MessageSquare,
-  Play,
-  Pause,
-  Send,
-  Phone,
-  Monitor,
-  Command,
-  Brain,
+import { 
+  BookOpen, 
+  FileText, 
+  Link, 
+  MessageSquare, 
+  Brain, 
+  Globe, 
+  Database, 
+  Plus, 
+  ExternalLink,
+  Folder,
+  FolderOpen,
+  File,
+  Edit,
+  Trash2,
+  Search,
+  Sparkles,
+  Lightbulb
 } from 'lucide-react';
 
 interface Source {
   id: string;
   title: string;
-  type: 'web' | 'pdf' | 'txt' | 'note' | 'link' | 'app';
+  type: 'web' | 'pdf' | 'txt' | 'note' | 'link';
   content: string;
   url?: string;
   createdAt: string;
+  tags: string[];
 }
 
 interface Workspace {
@@ -37,18 +44,19 @@ interface Note {
 }
 
 export function CognitoSphereApp() {
-  const [activeTab, setActiveTab] = useState<'workspaces' | 'notebook' | 'assistant'>('workspaces');
+  const [activeTab, setActiveTab] = useState<'workspaces' | 'notebook' | 'insights'>('workspaces');
   const [workspaces, setWorkspaces] = useState<Workspace[]>([
     {
       id: 'ws-1',
-      name: 'History of AI',
+      name: 'AI Research',
       sources: [
         {
           id: 'src-1',
           title: 'Introduction to Machine Learning',
           type: 'pdf',
           content: 'PDF content about machine learning...',
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          tags: ['AI', 'ML', 'Research']
         },
         {
           id: 'src-2',
@@ -56,7 +64,8 @@ export function CognitoSphereApp() {
           type: 'web',
           content: 'Web article content...',
           url: 'https://example.com/deep-learning',
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          tags: ['AI', 'Deep Learning', 'Research']
         }
       ],
       createdAt: new Date().toISOString()
@@ -76,6 +85,7 @@ export function CognitoSphereApp() {
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [newNoteContent, setNewNoteContent] = useState('');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const createWorkspace = () => {
     if (!newWorkspaceName.trim()) return;
@@ -90,29 +100,6 @@ export function CognitoSphereApp() {
     setWorkspaces([...workspaces, newWorkspace]);
     setActiveWorkspace(newWorkspace);
     setNewWorkspaceName('');
-  };
-
-  const addSource = (type: Source['type'], title: string, content: string, url?: string) => {
-    if (!activeWorkspace) return;
-    
-    const newSource: Source = {
-      id: `src-${Date.now()}`,
-      title,
-      type,
-      content,
-      url,
-      createdAt: new Date().toISOString()
-    };
-    
-    const updatedWorkspace = {
-      ...activeWorkspace,
-      sources: [...activeWorkspace.sources, newSource]
-    };
-    
-    setActiveWorkspace(updatedWorkspace);
-    setWorkspaces(workspaces.map(ws => 
-      ws.id === activeWorkspace.id ? updatedWorkspace : ws
-    ));
   };
 
   const addNote = () => {
@@ -137,7 +124,6 @@ export function CognitoSphereApp() {
       case 'txt': return <File className="w-4 h-4" />;
       case 'note': return <MessageSquare className="w-4 h-4" />;
       case 'link': return <Link className="w-4 h-4" />;
-      case 'app': return <Share2 className="w-4 h-4" />;
       default: return <Database className="w-4 h-4" />;
     }
   };
@@ -149,10 +135,23 @@ export function CognitoSphereApp() {
       case 'txt': return 'bg-green-500/20 text-green-500';
       case 'note': return 'bg-yellow-500/20 text-yellow-500';
       case 'link': return 'bg-purple-500/20 text-purple-500';
-      case 'app': return 'bg-pink-500/20 text-pink-500';
       default: return 'bg-gray-500/20 text-gray-500';
     }
   };
+
+  const toggleSourceSelection = (sourceId: string) => {
+    setSelectedSources(prev => 
+      prev.includes(sourceId) 
+        ? prev.filter(id => id !== sourceId) 
+        : [...prev, sourceId]
+    );
+  };
+
+  const filteredSources = activeWorkspace?.sources.filter(source => 
+    source.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    source.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    source.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  ) || [];
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -176,8 +175,9 @@ export function CognitoSphereApp() {
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
+          aria-label="Workspaces"
         >
-          <Database className="w-4 h-4" />
+          <Folder className="w-4 h-4" />
           Workspaces
         </button>
         <button
@@ -187,425 +187,278 @@ export function CognitoSphereApp() {
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
+          aria-label="Smart Notebook"
         >
           <BookOpen className="w-4 h-4" />
           Smart Notebook
         </button>
         <button
-          onClick={() => setActiveTab('assistant')}
+          onClick={() => setActiveTab('insights')}
           className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${
-            activeTab === 'assistant'
+            activeTab === 'insights'
               ? 'border-primary text-primary'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
+          aria-label="AI Insights"
         >
-          <Sparkles className="w-4 h-4" />
-          AI Assistant
+          <Lightbulb className="w-4 h-4" />
+          AI Insights
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
-        {activeTab === 'workspaces' && (
-          <div className="max-w-6xl mx-auto space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold">Research Workspaces</h3>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newWorkspaceName}
-                  onChange={(e) => setNewWorkspaceName(e.target.value)}
-                  placeholder="New workspace name"
-                  className="px-3 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-                <button
-                  onClick={createWorkspace}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create
-                </button>
-              </div>
+      {/* Content */}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Sidebar */}
+        <div className="w-64 border-r border-border/50 bg-muted/30 flex flex-col">
+          <div className="p-4 border-b border-border/50">
+            <h3 className="font-semibold text-foreground mb-2">Workspaces</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newWorkspaceName}
+                onChange={(e) => setNewWorkspaceName(e.target.value)}
+                placeholder="New workspace"
+                className="flex-1 text-sm bg-background border border-border rounded px-2 py-1"
+                onKeyDown={(e) => e.key === 'Enter' && createWorkspace()}
+                aria-label="New workspace name"
+              />
+              <button
+                onClick={createWorkspace}
+                className="p-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                aria-label="Create workspace"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
-
-            {activeWorkspace ? (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-lg font-semibold">{activeWorkspace.name}</h4>
-                  <button
-                    onClick={() => setActiveWorkspace(null)}
-                    className="px-3 py-1 bg-muted rounded-lg text-sm hover:bg-muted/80 transition-colors"
-                  >
-                    Back to List
-                  </button>
-                </div>
-
-                {/* Source Input */}
-                <div className="bg-background/50 border border-border rounded-lg p-4">
-                  <h5 className="font-medium mb-3">Add Sources</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <button
-                      onClick={() => {
-                        const query = prompt('Enter search query:');
-                        if (query) {
-                          addSource('web', `Search: ${query}`, `Search results for "${query}"`, `https://google.com/search?q=${encodeURIComponent(query)}`);
-                        }
-                      }}
-                      className="p-3 border border-border rounded-lg hover:border-primary/50 transition-colors flex flex-col items-center gap-2"
-                    >
-                      <Globe className="w-5 h-5 text-blue-500" />
-                      <span className="text-sm">Web Search</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const url = prompt('Enter URL:');
-                        if (url) {
-                          addSource('link', `Link: ${url}`, `Content from ${url}`, url);
-                        }
-                      }}
-                      className="p-3 border border-border rounded-lg hover:border-primary/50 transition-colors flex flex-col items-center gap-2"
-                    >
-                      <Link className="w-5 h-5 text-purple-500" />
-                      <span className="text-sm">Add Link</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const title = prompt('Enter note title:');
-                        if (title) {
-                          const content = prompt('Enter note content:');
-                          if (content) {
-                            addSource('note', title, content);
-                          }
-                        }
-                      }}
-                      className="p-3 border border-border rounded-lg hover:border-primary/50 transition-colors flex flex-col items-center gap-2"
-                    >
-                      <MessageSquare className="w-5 h-5 text-yellow-500" />
-                      <span className="text-sm">Add Note</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Sources List */}
-                <div className="bg-background/50 border border-border rounded-lg p-4">
-                  <h5 className="font-medium mb-3">Sources ({activeWorkspace.sources.length})</h5>
-                  <div className="space-y-2">
-                    {activeWorkspace.sources.map((source) => (
-                      <div 
-                        key={source.id}
-                        className="p-3 bg-background border border-border rounded-lg flex items-start gap-3"
-                      >
-                        <div className={`p-2 rounded-lg ${getSourceColor(source.type)}`}>
-                          {getSourceIcon(source.type)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{source.title}</div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Added {new Date(source.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <button className="p-1 hover:bg-muted rounded">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {workspaces.map((workspace) => (
-                  <div
-                    key={workspace.id}
-                    onClick={() => setActiveWorkspace(workspace)}
-                    className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <Database className="w-5 h-5 text-indigo-500" />
-                      <h4 className="font-semibold">{workspace.name}</h4>
-                    </div>
-                    <div className="text-sm text-muted-foreground mb-3">
-                      {workspace.sources.length} sources
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Created {new Date(workspace.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        )}
+          
+          <div className="flex-1 overflow-y-auto p-2">
+            {workspaces.map((workspace) => (
+              <button
+                key={workspace.id}
+                onClick={() => setActiveWorkspace(workspace)}
+                className={`w-full text-left p-2 rounded text-sm flex items-center gap-2 transition-colors ${
+                  activeWorkspace?.id === workspace.id
+                    ? 'bg-primary/20 text-primary'
+                    : 'hover:bg-muted'
+                }`}
+                aria-label={`Select workspace ${workspace.name}`}
+              >
+                <Folder className="w-4 h-4" />
+                {workspace.name}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {activeTab === 'notebook' && (
-          <div className="max-w-6xl mx-auto space-y-6">
-            <h3 className="text-xl font-semibold">Smart Notebook</h3>
-            
-            {activeWorkspace ? (
-              <div className="flex gap-6">
-                {/* Sources Panel */}
-                <div className="w-1/3 bg-background/50 border border-border rounded-lg p-4">
-                  <h4 className="font-medium mb-3">Sources</h4>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {activeWorkspace.sources.map((source) => (
-                      <div 
-                        key={source.id}
-                        className={`p-2 rounded-lg border cursor-pointer transition-colors ${
-                          selectedSources.includes(source.id)
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                        onClick={() => {
-                          if (selectedSources.includes(source.id)) {
-                            setSelectedSources(selectedSources.filter(id => id !== source.id));
-                          } else {
-                            setSelectedSources([...selectedSources, source.id]);
-                          }
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1 rounded ${getSourceColor(source.type)}`}>
-                            {getSourceIcon(source.type)}
-                          </div>
-                          <div className="text-sm truncate">{source.title}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Notebook Panel */}
-                <div className="flex-1 flex flex-col gap-4">
-                  {/* New Note */}
-                  <div className="bg-background/50 border border-border rounded-lg p-4">
-                    <textarea
-                      value={newNoteContent}
-                      onChange={(e) => setNewNoteContent(e.target.value)}
-                      placeholder="Ask a question or write a note..."
-                      className="w-full p-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent mb-3"
-                      rows={3}
-                    />
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-muted-foreground">
-                        {selectedSources.length} sources selected
+        {/* Main Content */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {activeTab === 'workspaces' && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {activeWorkspace ? (
+                <>
+                  <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                    <h3 className="font-semibold text-foreground">{activeWorkspace.name}</h3>
+                    <div className="flex gap-2">
+                      <div className="relative">
+                        <Search className="w-4 h-4 absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          placeholder="Search sources..."
+                          className="pl-8 pr-4 py-1 text-sm bg-background border border-border rounded"
+                          aria-label="Search sources"
+                        />
                       </div>
                       <button
-                        onClick={addNote}
-                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                        onClick={createWorkspace}
+                        className="p-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                        aria-label="Add source"
                       >
                         <Plus className="w-4 h-4" />
-                        Add Note
                       </button>
                     </div>
                   </div>
-
-                  {/* Notes List */}
-                  <div className="bg-background/50 border border-border rounded-lg p-4 flex-1">
-                    <h4 className="font-medium mb-3">Notes</h4>
-                    <div className="space-y-4 max-h-96 overflow-y-auto">
-                      {notes.map((note) => (
-                        <div key={note.id} className="p-3 bg-background border border-border rounded-lg">
-                          <div className="whitespace-pre-wrap mb-2">{note.content}</div>
-                          <div className="flex justify-between items-center text-xs text-muted-foreground">
-                            <div>
-                              {note.sources.length > 0 && (
-                                <span>
-                                  Sources: {note.sources.length}
+                  
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredSources.map((source) => (
+                        <div 
+                          key={source.id}
+                          className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
+                            selectedSources.includes(source.id) 
+                              ? 'ring-2 ring-primary border-primary' 
+                              : 'border-border'
+                          }`}
+                          onClick={() => toggleSourceSelection(source.id)}
+                          aria-label={`Select source ${source.title}`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className={`p-2 rounded ${getSourceColor(source.type)}`}>
+                              {getSourceIcon(source.type)}
+                            </div>
+                            <div className="flex gap-1">
+                              {source.tags.map((tag, index) => (
+                                <span 
+                                  key={index} 
+                                  className="text-xs bg-muted px-1.5 py-0.5 rounded"
+                                >
+                                  {tag}
                                 </span>
-                              )}
+                              ))}
                             </div>
-                            <div>
-                              {new Date(note.createdAt).toLocaleString()}
-                            </div>
+                          </div>
+                          <h4 className="font-medium text-foreground mb-1">{source.title}</h4>
+                          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                            {source.content}
+                          </p>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{new Date(source.createdAt).toLocaleDateString()}</span>
+                            {source.url && (
+                              <a 
+                                href={source.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="hover:text-primary"
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={`Open source ${source.title}`}
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
+                </>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No workspace selected</h3>
+                    <p className="text-muted-foreground">Create or select a workspace to get started</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Database className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h4 className="text-lg font-medium mb-2">No Active Workspace</h4>
-                <p className="text-muted-foreground mb-4">
-                  Select a workspace or create a new one to start taking notes.
-                </p>
+              )}
+            </div>
+          )}
+          
+          {activeTab === 'notebook' && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                <h3 className="font-semibold text-foreground">Smart Notebook</h3>
                 <button
-                  onClick={() => setActiveTab('workspaces')}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  onClick={addNote}
+                  className="px-3 py-1 bg-primary text-primary-foreground text-sm rounded hover:bg-primary/90 transition-colors"
                 >
-                  Go to Workspaces
+                  Save Note
                 </button>
               </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'assistant' && (
-          <div className="max-w-6xl mx-auto space-y-6">
-            <h3 className="text-xl font-semibold">AI Research Assistant</h3>
-            
-            {activeWorkspace ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div 
-                  className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    if (activeWorkspace) {
-                      const summary = `Summary of "${activeWorkspace.name}":\n\nThis workspace contains ${activeWorkspace.sources.length} sources about the topic. The sources include web articles, PDF documents, and personal notes that explore various aspects of this subject.`;
-                      setNotes([...notes, {
-                        id: `note-${Date.now()}`,
-                        content: summary,
-                        createdAt: new Date().toISOString(),
-                        sources: activeWorkspace.sources.map(s => s.id)
-                      }]);
-                    }
-                  }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center mb-3">
-                    <FileText className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <h4 className="font-medium mb-1">Generate Summary</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Create a comprehensive summary of all sources in this workspace.
-                  </p>
+              
+              <div className="flex-1 overflow-hidden flex">
+                <div className="w-1/2 border-r border-border/50 p-4">
+                  <textarea
+                    value={newNoteContent}
+                    onChange={(e) => setNewNoteContent(e.target.value)}
+                    placeholder="Start writing your thoughts, ideas, or insights..."
+                    className="w-full h-full bg-background border border-border rounded p-3 resize-none"
+                    aria-label="Note content"
+                  />
                 </div>
                 
-                <div 
-                  className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    const timeline = `Timeline of "${activeWorkspace.name}":
-
-• 2020: Initial research
-• 2021: Key developments
-• 2022: Major breakthroughs
-• 2023: Current state
-• 2024: Future predictions`;
-                    setNotes([...notes, {
-                      id: `note-${Date.now()}`,
-                      content: timeline,
-                      createdAt: new Date().toISOString(),
-                      sources: []
-                    }]);
-                  }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center mb-3">
-                    <Calendar className="w-5 h-5 text-green-500" />
+                <div className="w-1/2 overflow-y-auto p-4">
+                  <h4 className="font-medium text-foreground mb-3">Your Notes</h4>
+                  <div className="space-y-3">
+                    {notes.map((note) => (
+                      <div key={note.id} className="border border-border rounded-lg p-3">
+                        <p className="text-sm text-foreground whitespace-pre-wrap mb-2">
+                          {note.content}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{new Date(note.createdAt).toLocaleString()}</span>
+                          <div className="flex gap-1">
+                            <button 
+                              className="p-1 hover:bg-muted rounded"
+                              aria-label="Edit note"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                            <button 
+                              className="p-1 hover:bg-muted rounded"
+                              aria-label="Delete note"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <h4 className="font-medium mb-1">Create Timeline</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Generate a chronological timeline of events from your sources.
-                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'insights' && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-border/50">
+                <h3 className="font-semibold text-foreground mb-2">AI-Powered Insights</h3>
+                <p className="text-sm text-muted-foreground">
+                  Discover patterns, connections, and insights from your knowledge base
+                </p>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border border-border rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    <h4 className="font-medium text-foreground">Key Themes</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {['AI Ethics', 'Machine Learning', 'Data Privacy', 'Neural Networks'].map((theme, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                        <span className="text-sm">{theme}</span>
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                          {Math.floor(Math.random() * 10) + 1} sources
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
-                <div 
-                  className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    const comparison = `Comparison Table:
-
-| Source | Key Points | Strengths | Weaknesses |
-|--------|------------|-----------|------------|
-| Source 1 | Point A | Strong | Weak |
-| Source 2 | Point B | Strong | Weak |`;
-                    setNotes([...notes, {
-                      id: `note-${Date.now()}`,
-                      content: comparison,
-                      createdAt: new Date().toISOString(),
-                      sources: []
-                    }]);
-                  }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-3">
-                    <Table className="w-5 h-5 text-purple-500" />
-                  </div>
-                  <h4 className="font-medium mb-1">Build Comparison Table</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Compare multiple sources side-by-side in a structured table.
-                  </p>
-                </div>
-                
-                <div 
-                  className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    const questions = `Follow-up Questions:
-
-1. What are the implications of this research?
-2. How does this compare to previous studies?
-3. What are the potential future developments?
-4. Are there any conflicting viewpoints?`;
-                    setNotes([...notes, {
-                      id: `note-${Date.now()}`,
-                      content: questions,
-                      createdAt: new Date().toISOString(),
-                      sources: []
-                    }]);
-                  }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center mb-3">
+                <div className="border border-border rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
                     <Lightbulb className="w-5 h-5 text-yellow-500" />
+                    <h4 className="font-medium text-foreground">Suggested Connections</h4>
                   </div>
-                  <h4 className="font-medium mb-1">Suggest Follow-up Questions</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Get AI-generated questions to deepen your research.
-                  </p>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-muted/30 rounded">
+                      <p className="text-sm text-foreground">
+                        "Machine Learning" and "Data Privacy" appear together in 7 sources
+                      </p>
+                      <div className="mt-2 flex gap-1">
+                        <span className="text-xs bg-blue-500/20 text-blue-500 px-2 py-0.5 rounded">AI</span>
+                        <span className="text-xs bg-purple-500/20 text-purple-500 px-2 py-0.5 rounded">Ethics</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
-                <div 
-                  className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    const glossary = `Glossary:
-
-• **Term 1**: Definition of term 1
-• **Term 2**: Definition of term 2
-• **Term 3**: Definition of term 3`;
-                    setNotes([...notes, {
-                      id: `note-${Date.now()}`,
-                      content: glossary,
-                      createdAt: new Date().toISOString(),
-                      sources: []
-                    }]);
-                  }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center mb-3">
-                    <ListOrdered className="w-5 h-5 text-red-500" />
+                <div className="border border-border rounded-lg p-4 md:col-span-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Brain className="w-5 h-5 text-indigo-500" />
+                    <h4 className="font-medium text-foreground">Knowledge Graph</h4>
                   </div>
-                  <h4 className="font-medium mb-1">Generate Glossary</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Create a list of key terms with definitions from your sources.
-                  </p>
-                </div>
-                
-                <div 
-                  className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    alert('Export to Creator Studio functionality would be implemented here');
-                  }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center mb-3">
-                    <Share2 className="w-5 h-5 text-pink-500" />
+                  <div className="h-64 bg-muted/30 rounded flex items-center justify-center">
+                    <p className="text-muted-foreground">Interactive knowledge graph visualization</p>
                   </div>
-                  <h4 className="font-medium mb-1">Export to Creator Studio</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Turn your research into a video script for Creator Studio.
-                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <Database className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h4 className="text-lg font-medium mb-2">No Active Workspace</h4>
-                <p className="text-muted-foreground mb-4">
-                  Select a workspace to use the AI Research Assistant.
-                </p>
-                <button
-                  onClick={() => setActiveTab('workspaces')}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  Go to Workspaces
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

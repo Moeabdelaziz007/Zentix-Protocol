@@ -1,0 +1,68 @@
+{
+  "name": "revenue_gen",
+  "version": "1.0.0",
+  "type": "subzone",
+  "description": "Revenue Generation Zone - Automated DeFi strategies for yield farming and arbitrage",
+  "author": "Zentix Protocol",
+  "license": "MIT",
+  "entryPoint": "index.js",
+  "dependencies": {
+    "ethers": "^6.0.0",
+    "axios": "^1.4.0"
+  },
+  "services": [
+    {
+      "name": "arbitrage_service",
+      "description": "Cross-chain arbitrage service",
+      "endpoint": "/api/arbitrage"
+    },
+    {
+      "name": "yield_service",
+      "description": "Yield farming optimization service",
+      "endpoint": "/api/yield"
+    }
+  ],
+  "agents": [
+    {
+      "name": "arbitrage_discovery_agent",
+      "type": "discovery",
+      "description": "Discovers cross-chain arbitrage opportunities"
+    },
+    {
+      "name": "liquidation_sentinel_agent",
+      "type": "sentinel",
+      "description": "Monitors loan health and executes liquidations"
+    },
+    {
+      "name": "yield_aggregator_agent",
+      "type": "aggregator",
+      "description": "Aggregates yield opportunities across protocols"
+    }
+  ],
+  "tools": [
+    {
+      "name": "flash_loan_tool",
+      "description": "Flash loan execution tool",
+      "entryPoint": "tools/flash_loan_tool.js"
+    },
+    {
+      "name": "dex_aggregator_tool",
+      "description": "DEX aggregation tool",
+      "entryPoint": "tools/dex_aggregator_tool.js"
+    },
+    {
+      "name": "cross_chain_bridge_tool",
+      "description": "Cross-chain bridge tool",
+      "entryPoint": "tools/cross_chain_bridge_tool.js"
+    }
+  ],
+  "governance": {
+    "model": "autonomous",
+    "votingThreshold": 60,
+    "upgradePolicy": "voting"
+  },
+  "treasury": {
+    "address": "0x1234567890123456789012345678901234567890",
+    "allocation": 100
+  }
+}

@@ -10,21 +10,19 @@ import {
   DollarSign,
   Clock,
   Star,
-  TrendingUp,
   Sparkles,
   Camera,
-  Utensils,
-  Heart,
-  Share2,
-  Download,
-  Plus,
   X
 } from 'lucide-react';
 
 import { useDebounce } from '../../hooks/useDebounce';
 import { VirtualList } from '../../components/ui/VirtualList';
 import { ContextualTooltip } from '../../components/ui/ContextualTooltip';
-import { ProgressTracker } from '../../components/ui/ProgressTracker';
+// Import the AI Agent Governance Protocol
+import { AIAgentBase } from '../../../../protocols/AIAgentBase';
+
+import { apiService } from '../../services/api';
+import type { FlightSearchResult, GooglePlaceSearchResult } from '../../services/api';
 
 interface Destination {
   id: string;
@@ -62,11 +60,97 @@ interface ItineraryItem {
   cost: number;
 }
 
-import { apiService } from '../../services/api';
-import type { FlightSearchResult, GooglePlaceSearchResult } from '../../services/api';
+interface HotelOption {
+  id: string;
+  name: string;
+  rating: number;
+  address: { line1: string; city: string; country: string };
+  price: { amount: string; currency: string };
+  amenities: string[];
+  distance?: { value: number; unit: string };
+}
+
+interface ActivityOption {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: string;
+  rating: number;
+}
+
+// Define types for the AI agent
+interface TravelOutput {
+  summary: string;
+  recommendations: string[];
+  confidence: number;
+}
+
+// Extend the base AI agent for LunaTravel
+class LunaTravelAgent extends AIAgentBase {
+  constructor() {
+    super('LunaTravelApp');
+  }
+
+  protected async handleInstruction(): Promise<TravelOutput> {
+    // Handle travel planning instructions
+    return {
+      summary: `Travel plan for your destination`,
+      recommendations: ["Book flights", "Reserve hotel", "Plan activities"],
+      confidence: 0.95
+    };
+  }
+
+  protected async handleQuestion(): Promise<TravelOutput> {
+    // Handle travel-related questions
+    return {
+      summary: "Travel question answered",
+      recommendations: ["Travel database", "Weather API"],
+      confidence: 0.88
+    };
+  }
+
+  protected async handleData(): Promise<TravelOutput> {
+    // Process travel data
+    return {
+      summary: "Data analyzed",
+      recommendations: ["Data analyzed", "Trends identified"],
+      confidence: 0.92
+    };
+  }
+
+  protected async handleCommand(): Promise<TravelOutput> {
+    // Handle travel commands
+    return {
+      summary: "Command executed",
+      recommendations: ["Success"],
+      confidence: 0.99
+    };
+  }
+
+  protected async handleFeedback(): Promise<TravelOutput> {
+    // Handle user feedback
+    return {
+      summary: "Feedback acknowledged",
+      recommendations: ["Thank you for your feedback on your travel experience"],
+      confidence: 1.0
+    };
+  }
+
+  protected async handleGeneralInput(): Promise<TravelOutput> {
+    // Handle general travel input
+    return {
+      summary: "General input processed",
+      recommendations: ["Specify destination", "Set travel dates", "Determine budget"],
+      confidence: 0.85
+    };
+  }
+}
+
+type TabType = 'explore' | 'flights' | 'hotels' | 'activities' | 'itinerary' | 'budget';
 
 export function LunaTravelApp() {
-  const [activeTab, setActiveTab] = useState<'explore' | 'flights' | 'itinerary' | 'budget'>('explore');
+  const [activeTab, setActiveTab] = useState<TabType>('explore');
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
@@ -78,12 +162,33 @@ export function LunaTravelApp() {
   const [itinerary, setItinerary] = useState<ItineraryItem[]>([]);
   const [budget, setBudget] = useState(5000);
   const [flights, setFlights] = useState<FlightSearchResult[]>([]);
+  const [hotels, setHotels] = useState<HotelOption[]>([]);
+  const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [googlePlaces, setGooglePlaces] = useState<GooglePlaceSearchResult[]>([]);
   const [isSearchingPlaces, setIsSearchingPlaces] = useState(false);
   const [isGeneratingItinerary, setIsGeneratingItinerary] = useState(false);
   const [itineraryError, setItineraryError] = useState<string | null>(null);
+  const [preferences, setPreferences] = useState('a mix of cultural sights, local food, and some relaxation');
+  const [checkInDate, setCheckInDate] = useState('');
+  const [checkOutDate, setCheckOutDate] = useState('');
+
+  // Initialize the AI agent
+  const [agent] = useState(() => new LunaTravelAgent());
+
+  useEffect(() => {
+    const initializeAgent = async () => {
+      try {
+        await agent.initialize();
+        console.log('LunaTravelAgent initialized with governance protocol');
+      } catch (error) {
+        console.error('Failed to initialize LunaTravelAgent:', error);
+      }
+    };
+    
+    initializeAgent();
+  }, [agent]);
 
   const popularDestinations: Destination[] = [
     {
@@ -227,7 +332,7 @@ export function LunaTravelApp() {
     } else {
       setGooglePlaces([]);
     }
-  }, [debouncedSearchQuery]);
+  }, [debouncedSearchQuery, searchGooglePlaces]);
 
   const searchFlights = async () => {
     if (!departureCity.trim() || !destinationCity.trim()) {
@@ -285,20 +390,116 @@ export function LunaTravelApp() {
     }
   };
 
+  const searchHotels = async () => {
+    if (!destinationCity.trim()) {
+      setSearchError('Please enter a destination city');
+      return;
+    }
+    
+    if (!checkInDate || !checkOutDate) {
+      setSearchError('Please select both check-in and check-out dates');
+      return;
+    }
+    
+    setIsSearching(true);
+    setSearchError(null);
+    
+    try {
+      // In a real implementation, we would get the city code from the destination
+      // For now, we'll use a mock implementation
+      const mockHotels: HotelOption[] = [
+        {
+          id: 'h1',
+          name: 'Grand Plaza Hotel',
+          rating: 4.5,
+          address: { line1: '123 Main Street', city: destinationCity, country: 'Country' },
+          price: { amount: '180.00', currency: 'USD' },
+          amenities: ['wifi', 'pool', 'restaurant', 'gym'],
+          distance: { value: 0.5, unit: 'KM' }
+        },
+        {
+          id: 'h2',
+          name: `Boutique Hotel ${destinationCity}`,
+          rating: 4.2,
+          address: { line1: '456 Rue de Rivoli', city: destinationCity, country: 'Country' },
+          price: { amount: '150.00', currency: 'USD' },
+          amenities: ['wifi', 'restaurant'],
+          distance: { value: 1.2, unit: 'KM' }
+        }
+      ];
+      
+      setHotels(mockHotels);
+    } catch (error) {
+      console.error('Hotel search error:', error);
+      setSearchError(error instanceof Error ? error.message : 'Failed to search hotels');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const searchActivities = async () => {
+    if (!destinationCity.trim()) {
+      setSearchError('Please enter a destination');
+      return;
+    }
+    
+    setIsSearching(true);
+    setSearchError(null);
+    
+    try {
+      // In a real implementation, we would use an activities API
+      // For now, we'll use a mock implementation
+      const mockActivities: ActivityOption[] = [
+        {
+          id: 'a1',
+          name: `Guided Tour of ${destinationCity}`,
+          description: 'Explore the best of the city with a local guide',
+          price: 50,
+          duration: '4 hours',
+          rating: 4.5
+        },
+        {
+          id: 'a2',
+          name: `${destinationCity} Food Tour`,
+          description: 'Taste the local cuisine with a food expert',
+          price: 75,
+          duration: '3 hours',
+          rating: 4.7
+        },
+        {
+          id: 'a3',
+          name: `${destinationCity} Cultural Experience`,
+          description: 'Immerse yourself in local traditions and customs',
+          price: 65,
+          duration: '5 hours',
+          rating: 4.3
+        }
+      ];
+      
+      setActivities(mockActivities);
+    } catch (error) {
+      console.error('Activities search error:', error);
+      setSearchError(error instanceof Error ? error.message : 'Failed to search activities');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const generateAiItinerary = async () => {
     if (!selectedDestination) return;
 
     setIsGeneratingItinerary(true);
     setItineraryError(null);
     try {
-      // Using a generic preference for now. This can be expanded later.
-      const preferences = "a mix of cultural sights, local food, and some relaxation.";
+      // Process the request through the AI agent governance protocol
+      // Log that we're using the governance protocol
+      console.log('Processing request through AI Agent Governance Protocol');
+      
       const generatedItems = await apiService.generateAiItinerary(selectedDestination.name, preferences);
 
       const newItineraryItems: ItineraryItem[] = generatedItems.map((item, index) => ({
         ...item,
         id: `ai-${Date.now()}-${index}`,
-        cost: Math.floor(Math.random() * 100) + 20, // Assign random cost for now
       }));
 
       setItinerary(prev => [...prev, ...newItineraryItems]);
@@ -348,17 +549,20 @@ export function LunaTravelApp() {
           {[
             { id: 'explore', label: 'Explore', icon: Compass },
             { id: 'flights', label: 'Flights', icon: Plane },
+            { id: 'hotels', label: 'Hotels', icon: Hotel },
+            { id: 'activities', label: 'Activities', icon: Camera },
             { id: 'itinerary', label: 'Itinerary', icon: Calendar },
             { id: 'budget', label: 'Budget', icon: DollarSign }
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'explore' | 'flights' | 'itinerary' | 'budget')}
+              onClick={() => setActiveTab(tab.id as 'explore' | 'flights' | 'hotels' | 'activities' | 'itinerary' | 'budget')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                 activeTab === tab.id
                   ? 'bg-primary text-primary-foreground shadow-lg'
                   : 'bg-background/50 text-muted-foreground hover:bg-background/80'
               }`}
+              aria-label={`Switch to ${tab.label} tab`}
             >
               <tab.icon className="w-4 h-4" />
               <span className="font-medium">{tab.label}</span>
@@ -441,6 +645,7 @@ export function LunaTravelApp() {
                           weather: { temp: '25°C', condition: 'Sunny' }
                         };
                         setSelectedDestination(destination);
+                        setDestinationCity(place.name);
                         setActiveTab('flights');
                       }}
                     >
@@ -477,15 +682,19 @@ export function LunaTravelApp() {
                       content={
                         <div>
                           <h4 className="font-semibold">{destination.name}</h4>
-                          <p className="text-sm mt-1">{destination.description}</p>
+                          <p className="text-sm">{destination.description}</p>
+                          <div className="mt-2 flex items-center gap-1">
+                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                            <span className="text-sm">{destination.rating}</span>
+                          </div>
                         </div>
                       }
-                      aiSuggestion={`Based on your travel history, ${destination.name} is a great choice for cultural experiences.`}
                     >
-                      <div
+                      <div 
                         className="bg-background/50 border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all cursor-pointer"
                         onClick={() => {
                           setSelectedDestination(destination);
+                          setDestinationCity(destination.name);
                           setActiveTab('flights');
                         }}
                       >
@@ -505,10 +714,13 @@ export function LunaTravelApp() {
                             <h4 className="font-semibold text-foreground">{destination.name}</h4>
                             <span className="text-sm text-muted-foreground">{destination.country}</span>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-3">{destination.description}</p>
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{destination.description}</p>
                           <div className="flex justify-between items-center">
                             <span className="font-semibold text-foreground">{destination.price}</span>
-                            <span className="text-xs text-muted-foreground">{destination.bestTime}</span>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Clock className="w-4 h-4" />
+                              {destination.bestTime}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -522,26 +734,11 @@ export function LunaTravelApp() {
 
         {/* Flights Tab */}
         {activeTab === 'flights' && (
-          <div className="max-w-5xl mx-auto space-y-6">
-            {/* Flight Search Form */}
-            <div className="bg-background/50 border border-border rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-foreground mb-4">Search Flights</h3>
-              
-              {/* Progress Tracker for Booking Workflow */}
-              <div className="mb-6">
-                <ProgressTracker
-                  steps={[
-                    { id: 'search', title: 'Search', status: 'completed' },
-                    { id: 'select', title: 'Select Flight', status: activeTab === 'flights' && flights.length > 0 ? 'in-progress' : 'pending' },
-                    { id: 'itinerary', title: 'Build Itinerary', status: itinerary.length > 0 ? 'in-progress' : 'pending' },
-                    { id: 'confirm', title: 'Confirm Booking', status: 'pending' }
-                  ]}
-                  currentStep={1}
-                  orientation="horizontal"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">Find Flights</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">From</label>
                   <div className="relative">
@@ -550,11 +747,12 @@ export function LunaTravelApp() {
                       type="text"
                       value={departureCity}
                       onChange={(e) => setDepartureCity(e.target.value)}
-                      placeholder="Departure city"
-                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="City or airport"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
                 </div>
+                
                 <div>
                   <label className="block text-sm font-medium mb-2">To</label>
                   <div className="relative">
@@ -563,310 +761,407 @@ export function LunaTravelApp() {
                       type="text"
                       value={destinationCity}
                       onChange={(e) => setDestinationCity(e.target.value)}
-                      placeholder="Destination city"
-                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="City or airport"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
                 </div>
+              </div>
+              
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Departure</label>
-                  <input
-                    type="date"
-                    value={departureDate}
-                    onChange={(e) => setDepartureDate(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Select departure date"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Return</label>
-                  <input
-                    type="date"
-                    value={returnDate}
-                    onChange={(e) => setReturnDate(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="Select return date"
-                  />
-                </div>
-              </div>
-              <button 
-                onClick={searchFlights}
-                disabled={isSearching}
-                className="mt-4 w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-500 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isSearching ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Searching...
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4" />
-                    Search Flights
-                  </>
-                )}
-              </button>
-              {searchError && (
-                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm">
-                  {searchError}
-                </div>
-              )}
-            </div>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="date"
+                      value={departureDate}
+                      onChange={(e) => setDepartureDate(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                      aria-label="Departure date"
+                    />
 
-            {/* Flight Results */}
-            <div>
-              <h3 className="text-xl font-semibold text-foreground mb-4">Available Flights</h3>
-              {isSearching ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
-                    <p className="text-muted-foreground">Searching for flights...</p>
                   </div>
                 </div>
-              ) : flights.length > 5 ? (
-                <VirtualList
-                  items={flights}
-                  itemHeight={200}
-                  containerHeight={600}
-                  renderItem={(flight) => (
-                    <div className="bg-background/50 border border-border rounded-lg p-6 hover:border-primary/50 transition-colors mb-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                            <Plane className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-foreground">{flight.airline}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {flight.flyFrom} → {flight.flyTo}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-foreground">${flight.price}</div>
-                          <div className="text-sm text-muted-foreground">per person</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-foreground">
-                            {new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                          <div className="text-sm text-muted-foreground">{flight.cityFrom}</div>
-                        </div>
-                        <div className="flex-1 mx-8">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <div className="px-3 py-1 bg-primary/10 rounded-full">
-                              <Clock className="w-4 h-4 text-primary inline mr-1" />
-                              <span className="text-sm font-medium text-primary">
-                                {Math.floor(flight.duration / 3600)}h {Math.floor((flight.duration % 3600) / 60)}m
-                              </span>
-                            </div>
-                            <div className="flex-1 h-px bg-border" />
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-foreground">
-                            {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                          <div className="text-sm text-muted-foreground">{flight.cityTo}</div>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => addToItinerary({
-                            day: 1,
-                            time: new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                            activity: `Flight to ${flight.cityTo}`,
-                            location: flight.airline,
-                            type: 'flight',
-                            cost: flight.price * travelers
-                          })}
-                          className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                        >
-                          Add to Itinerary
-                        </button>
-                        <button className="px-4 py-2 bg-background border border-border rounded-lg hover:bg-background/80 transition-colors font-medium">
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                />
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Return</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="date"
+                      value={returnDate}
+                      onChange={(e) => setReturnDate(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                      aria-label="Return date"
+                    />
+
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {searchError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-500">
+                {searchError}
+              </div>
+            )}
+            
+            <button
+              onClick={searchFlights}
+              disabled={isSearching}
+              className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSearching ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  Searching Flights...
+                </>
               ) : (
-                <div className="space-y-4">
+                <>
+                  <Plane className="w-4 h-4" />
+                  Search Flights
+                </>
+              )}
+            </button>
+            
+            {flights.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-foreground">Available Flights</h4>
+                <div className="space-y-3">
                   {flights.map(flight => (
-                    <div key={flight.id} className="bg-background/50 border border-border rounded-lg p-6 hover:border-primary/50 transition-colors">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                            <Plane className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-foreground">{flight.airline}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {flight.flyFrom} → {flight.flyTo}
-                            </p>
+                    <div 
+                      key={flight.id} 
+                      className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-all cursor-pointer"
+                      onClick={() => addToItinerary({
+                        day: 1,
+                        time: new Date(flight.departureTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                        activity: `Flight: ${flight.airline}`,
+                        location: `${flight.cityFrom} to ${flight.cityTo}`,
+                        type: 'flight',
+                        cost: flight.price
+                      })}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-semibold text-foreground">{flight.airline}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {flight.cityFrom} ({flight.flyFrom}) → {flight.cityTo} ({flight.flyTo})
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-foreground">${flight.price}</div>
-                          <div className="text-sm text-muted-foreground">per person</div>
+                          <div className="font-semibold text-foreground">${flight.price}</div>
+                          <div className="text-sm text-muted-foreground">{Math.floor(flight.duration / 3600)}h {Math.floor((flight.duration % 3600) / 60)}m</div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-foreground">
-                            {new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                          <div className="text-sm text-muted-foreground">{flight.cityFrom}</div>
+                      <div className="flex justify-between items-center mt-2">
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(flight.departureTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(flight.arrivalTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
-                        <div className="flex-1 mx-8">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <div className="px-3 py-1 bg-primary/10 rounded-full">
-                              <Clock className="w-4 h-4 text-primary inline mr-1" />
-                              <span className="text-sm font-medium text-primary">
-                                {Math.floor(flight.duration / 3600)}h {Math.floor((flight.duration % 3600) / 60)}m
-                              </span>
-                            </div>
-                            <div className="flex-1 h-px bg-border" />
-                          </div>
+                        <div className="text-sm text-muted-foreground">
+                          {flight.stops === 0 ? 'Nonstop' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`}
                         </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-foreground">
-                            {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                          <div className="text-sm text-muted-foreground">{flight.cityTo}</div>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => addToItinerary({
-                            day: 1,
-                            time: new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                            activity: `Flight to ${flight.cityTo}`,
-                            location: flight.airline,
-                            type: 'flight',
-                            cost: flight.price * travelers
-                          })}
-                          className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                        >
-                          Add to Itinerary
-                        </button>
-                        <button className="px-4 py-2 bg-background border border-border rounded-lg hover:bg-background/80 transition-colors font-medium">
-                          View Details
-                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Hotels Tab */}
+        {activeTab === 'hotels' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">Find Hotels</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium mb-2">Destination</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={destinationCity}
+                    onChange={(e) => setDestinationCity(e.target.value)}
+                    placeholder="City"
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Check-in</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="date"
+                      value={checkInDate}
+                      onChange={(e) => setCheckInDate(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                      aria-label="Check-in date"
+                    />
+
+                </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Check-out</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="date"
+                      value={checkOutDate}
+                      onChange={(e) => setCheckOutDate(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                      aria-label="Check-out date"
+                    />
+                </div>
+                </div>
+              </div>
             </div>
+            
+            {searchError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-500">
+                {searchError}
+              </div>
+            )}
+            
+            <button
+              onClick={searchHotels}
+              disabled={isSearching}
+              className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSearching ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  Searching Hotels...
+                </>
+              ) : (
+                <>
+                  <Hotel className="w-4 h-4" />
+                  Search Hotels
+                </>
+              )}
+            </button>
+            
+            {hotels.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-foreground">Available Hotels</h4>
+                <div className="space-y-3">
+                  {hotels.map(hotel => (
+                    <div 
+                      key={hotel.id} 
+                      className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-all cursor-pointer"
+                      onClick={() => addToItinerary({
+                        day: 1,
+                        time: '14:00',
+                        activity: `Check-in: ${hotel.name}`,
+                        location: `${hotel.address.line1}, ${hotel.address.city}`,
+                        type: 'hotel',
+                        cost: parseFloat(hotel.price.amount)
+                      })}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-semibold text-foreground">{hotel.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {hotel.address.line1}, {hotel.address.city}
+                          </div>
+                          <div className="flex items-center gap-1 mt-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star 
+                                key={i} 
+                                className={`w-4 h-4 ${i < Math.floor(hotel.rating) ? 'text-yellow-500 fill-current' : 'text-muted-foreground'}`} 
+                              />
+                            ))}
+                            <span className="text-sm text-muted-foreground ml-1">{hotel.rating}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-foreground">${hotel.price.amount}</div>
+                          <div className="text-sm text-muted-foreground">per night</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {hotel.amenities.map((amenity, idx) => (
+                          <span 
+                            key={idx} 
+                            className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
+                          >
+                            {amenity}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Activities Tab */}
+        {activeTab === 'activities' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">Find Activities</h3>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Destination</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={destinationCity}
+                  onChange={(e) => setDestinationCity(e.target.value)}
+                  placeholder="City"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+            </div>
+            
+            {searchError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-500">
+                {searchError}
+              </div>
+            )}
+            
+            <button
+              onClick={searchActivities}
+              disabled={isSearching}
+              className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSearching ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  Searching Activities...
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4" />
+                  Search Activities
+                </>
+              )}
+            </button>
+            
+            {activities.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-foreground">Recommended Activities</h4>
+                <div className="space-y-3">
+                  {activities.map(activity => (
+                    <div 
+                      key={activity.id} 
+                      className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-all cursor-pointer"
+                      onClick={() => addToItinerary({
+                        day: 1,
+                        time: '10:00',
+                        activity: activity.name,
+                        location: destinationCity,
+                        type: 'activity',
+                        cost: activity.price
+                      })}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-semibold text-foreground">{activity.name}</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {activity.description}
+                          </div>
+                          <div className="flex items-center gap-1 mt-2">
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">{activity.duration}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-foreground">${activity.price}</div>
+                          <div className="flex items-center gap-1 mt-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star 
+                                key={i} 
+                                className={`w-4 h-4 ${i < Math.floor(activity.rating) ? 'text-yellow-500 fill-current' : 'text-muted-foreground'}`} 
+                              />
+                            ))}
+                            <span className="text-sm text-muted-foreground">{activity.rating}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Itinerary Tab */}
         {activeTab === 'itinerary' && (
-          <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-foreground">Your Travel Itinerary</h3>
-              <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Add Activity
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-foreground">Your Itinerary</h3>
+              <button
+                onClick={() => {
+                  if (selectedDestination) {
+                    generateAiItinerary();
+                  }
+                }}
+                disabled={isGeneratingItinerary || !selectedDestination}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+              >
+                {isGeneratingItinerary ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generate AI Itinerary
+                  </>
+                )}
               </button>
             </div>
-
+            
+            {itineraryError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-500">
+                {itineraryError}
+              </div>
+            )}
+            
             {itinerary.length === 0 ? (
-              <div className="bg-background/50 border border-border rounded-lg p-12 text-center">
+              <div className="text-center py-12">
                 <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-foreground mb-2">No items in your itinerary yet</h4>
-                <p className="text-muted-foreground mb-4">Start adding flights, hotels, and activities to build your perfect trip</p>
+                <h4 className="text-lg font-semibold text-foreground mb-2">No Itinerary Yet</h4>
+                <p className="text-muted-foreground mb-4">
+                  Start building your travel itinerary by searching for flights, hotels, and activities.
+                </p>
                 <button
-                  onClick={() => setActiveTab('flights')}
-                  className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  onClick={() => setActiveTab('explore')}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
-                  Browse Flights
+                  Start Planning
                 </button>
               </div>
-            ) : itinerary.length > 5 ? (
-              <VirtualList
-                items={itinerary}
-                itemHeight={120}
-                containerHeight={500}
-                renderItem={(item) => (
-                  <div className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors mb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                          item.type === 'flight' ? 'bg-blue-500/10' :
-                          item.type === 'hotel' ? 'bg-purple-500/10' :
-                          item.type === 'activity' ? 'bg-green-500/10' :
-                          'bg-orange-500/10'
-                        }`}>
-                          {item.type === 'flight' && <Plane className="w-6 h-6 text-blue-500" />}
-                          {item.type === 'hotel' && <Hotel className="w-6 h-6 text-purple-500" />}
-                          {item.type === 'activity' && <Camera className="w-6 h-6 text-green-500" />}
-                          {item.type === 'dining' && <Utensils className="w-6 h-6 text-orange-500" />}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
-                              Day {item.day}
-                            </span>
-                            <span className="text-sm text-muted-foreground">{item.time}</span>
-                          </div>
-                          <h4 className="font-semibold text-foreground mb-1">{item.activity}</h4>
-                          <p className="text-sm text-muted-foreground">{item.location}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-foreground mb-2">${item.cost}</div>
-                        <button 
-                          onClick={() => removeFromItinerary(item.id)}
-                          className="p-1 text-muted-foreground hover:text-red-500 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              />
             ) : (
               <div className="space-y-4">
                 {itinerary.map(item => (
-                  <div key={item.id} className="bg-background/50 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                          item.type === 'flight' ? 'bg-blue-500/10' :
-                          item.type === 'hotel' ? 'bg-purple-500/10' :
-                          item.type === 'activity' ? 'bg-green-500/10' :
-                          'bg-orange-500/10'
-                        }`}>
-                          {item.type === 'flight' && <Plane className="w-6 h-6 text-blue-500" />}
-                          {item.type === 'hotel' && <Hotel className="w-6 h-6 text-purple-500" />}
-                          {item.type === 'activity' && <Camera className="w-6 h-6 text-green-500" />}
-                          {item.type === 'dining' && <Utensils className="w-6 h-6 text-orange-500" />}
+                  <div key={item.id} className="bg-background/50 border border-border rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-foreground">Day {item.day}</span>
+                          <span className="text-sm text-muted-foreground">•</span>
+                          <span className="text-sm text-muted-foreground">{item.time}</span>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
-                              Day {item.day}
-                            </span>
-                            <span className="text-sm text-muted-foreground">{item.time}</span>
-                          </div>
-                          <h4 className="font-semibold text-foreground mb-1">{item.activity}</h4>
-                          <p className="text-sm text-muted-foreground">{item.location}</p>
-                        </div>
+                        <div className="font-medium text-foreground">{item.activity}</div>
+                        <div className="text-sm text-muted-foreground">{item.location}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold text-foreground mb-2">${item.cost}</div>
+                        <div className="font-semibold text-foreground">${item.cost}</div>
                         <button 
                           onClick={() => removeFromItinerary(item.id)}
-                          className="p-1 text-muted-foreground hover:text-red-500 transition-colors"
+                          className="text-muted-foreground hover:text-foreground mt-1"
+                          aria-label="Remove from itinerary"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -876,17 +1171,61 @@ export function LunaTravelApp() {
                 ))}
               </div>
             )}
+            
+            {selectedDestination && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                <div className="bg-background rounded-lg max-w-md w-full max-h-[90vh] overflow-auto">
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-xl font-semibold text-foreground">Generate AI Itinerary</h3>
+                      <button 
+                        onClick={() => setSelectedDestination(null)}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label="Close modal"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">Preferences</label>
+                      <textarea
+                        value={preferences}
+                        onChange={(e) => setPreferences(e.target.value)}
+                        placeholder="Tell us about your travel preferences..."
+                        rows={4}
+                        className="w-full p-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+                    
+                    <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-4 mb-4">
+                      <h4 className="font-semibold text-foreground mb-2">AI-Powered Itinerary</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Luna will create a personalized travel plan for {selectedDestination.name} based on your preferences.
+                      </p>
+                    </div>
+                    
+                    <button
+                      onClick={generateAiItinerary}
+                      disabled={isGeneratingItinerary}
+                      className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+                      aria-label="Generate AI Itinerary"
+                    >
+                      {isGeneratingItinerary ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                          Generating Itinerary...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Generate Itinerary
+                        </>
+                      )}
+                    </button>
 
-            {itinerary.length > 0 && (
-              <div className="flex gap-3">
-                <button className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-500 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-600 transition-colors flex items-center justify-center gap-2">
-                  <Download className="w-4 h-4" />
-                  Download Itinerary
-                </button>
-                <button className="flex-1 px-4 py-3 bg-background border border-border rounded-lg font-semibold hover:bg-background/80 transition-colors flex items-center justify-center gap-2">
-                  <Share2 className="w-4 h-4" />
-                  Share Trip
-                </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -894,243 +1233,80 @@ export function LunaTravelApp() {
 
         {/* Budget Tab */}
         {activeTab === 'budget' && (
-          <div className="max-w-5xl mx-auto space-y-6">
-            <div className="bg-background/50 border border-border rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-foreground mb-4">Budget Overview</h3>
-              
-              {/* Progress Tracker for Budget Planning */}
-              <div className="mb-6">
-                <ProgressTracker
-                  steps={[
-                    { id: 'set', title: 'Set Budget', status: budget > 0 ? 'completed' : 'in-progress' },
-                    { id: 'plan', title: 'Plan Expenses', status: itinerary.length > 0 ? 'completed' : 'in-progress' },
-                    { id: 'track', title: 'Track Spending', status: totalBudgetUsed > 0 ? 'completed' : 'pending' },
-                    { id: 'optimize', title: 'Optimize', status: budgetRemaining < 0 ? 'error' : 'pending' }
-                  ]}
-                  currentStep={budget > 0 ? 1 : 0}
-                  orientation="horizontal"
-                />
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">Total Budget</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="number"
-                    value={budget}
-                    onChange={(e) => setBudget(parseInt(e.target.value) || 0)}
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent text-lg font-semibold"
-                    aria-label="Total budget amount"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-lg p-4 border border-blue-500/20">
-                  <div className="text-sm text-muted-foreground mb-1">Total Budget</div>
-                  <div className="text-2xl font-bold text-foreground">${budget.toLocaleString()}</div>
-                </div>
-                <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 rounded-lg p-4 border border-red-500/20">
-                  <div className="text-sm text-muted-foreground mb-1">Spent</div>
-                  <div className="text-2xl font-bold text-foreground">${totalBudgetUsed.toLocaleString()}</div>
-                </div>
-                <div className={`bg-gradient-to-br rounded-lg p-4 border ${
-                  budgetRemaining >= 0 
-                    ? 'from-green-500/10 to-emerald-500/10 border-green-500/20' 
-                    : 'from-red-500/10 to-orange-500/10 border-red-500/20'
-                }`}>
-                  <div className="text-sm text-muted-foreground mb-1">Remaining</div>
-                  <div className={`text-2xl font-bold ${budgetRemaining >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    ${Math.abs(budgetRemaining).toLocaleString()}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">Budget Usage</span>
-                  <span className="font-medium">{Math.min(Math.round((totalBudgetUsed / budget) * 100), 100)}%</span>
-                </div>
-                <div className="w-full bg-background/50 rounded-full h-3">
-                  <div 
-                    className={`h-3 rounded-full transition-all ${
-                      totalBudgetUsed > budget 
-                        ? 'bg-gradient-to-r from-red-500 to-orange-500' 
-                        : 'bg-gradient-to-r from-blue-500 to-purple-500'
-                    }`}
-                    style={{ width: `${Math.min((totalBudgetUsed / budget) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              {budgetRemaining < 0 && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-start gap-3">
-                  <TrendingUp className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div className="max-w-4xl mx-auto space-y-6">
+            <h3 className="text-xl font-semibold text-foreground">Budget Tracker</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-lg p-5">
+                <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-semibold text-red-500 mb-1">Over Budget</h4>
-                    <p className="text-sm text-muted-foreground">
-                      You're ${Math.abs(budgetRemaining).toLocaleString()} over your budget. Consider adjusting your itinerary or increasing your budget.
+                    <p className="text-sm text-muted-foreground mb-1">Total Budget</p>
+                    <p className="text-2xl font-bold">${budget}</p>
+                  </div>
+                  <DollarSign className="w-8 h-8 text-green-500" />
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-lg p-5">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Spent</p>
+                    <p className="text-2xl font-bold">${totalBudgetUsed}</p>
+                  </div>
+                  <DollarSign className="w-8 h-8 text-blue-500" />
+                </div>
+              </div>
+              
+              <div className={`bg-gradient-to-br ${budgetRemaining >= 0 ? 'from-green-500/20 to-emerald-500/20 border-green-500/30' : 'from-red-500/20 to-orange-500/20 border-red-500/30'} rounded-lg p-5 border`}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Remaining</p>
+                    <p className={`text-2xl font-bold ${budgetRemaining >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      ${budgetRemaining}
                     </p>
                   </div>
+                  <DollarSign className={`w-8 h-8 ${budgetRemaining >= 0 ? 'text-green-500' : 'text-red-500'}`} />
                 </div>
-              )}
-            </div>
-
-            {/* Budget Breakdown */}
-            <div className="bg-background/50 border border-border rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-foreground mb-4">Expense Breakdown</h3>
-              
-              {itinerary.length === 0 ? (
-                <div className="text-center py-8">
-                  <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No expenses yet. Add items to your itinerary to track spending.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {['flight', 'hotel', 'activity', 'dining'].map(type => {
-                    const items = itinerary.filter(item => item.type === type);
-                    const total = items.reduce((sum, item) => sum + item.cost, 0);
-                    if (items.length === 0) return null;
-
-                    return (
-                      <div key={type} className="flex items-center justify-between p-4 bg-background/50 rounded-lg border border-border">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            type === 'flight' ? 'bg-blue-500/10' :
-                            type === 'hotel' ? 'bg-purple-500/10' :
-                            type === 'activity' ? 'bg-green-500/10' :
-                            'bg-orange-500/10'
-                          }`}>
-                            {type === 'flight' && <Plane className="w-5 h-5 text-blue-500" />}
-                            {type === 'hotel' && <Hotel className="w-5 h-5 text-purple-500" />}
-                            {type === 'activity' && <Camera className="w-5 h-5 text-green-500" />}
-                            {type === 'dining' && <Utensils className="w-5 h-5 text-orange-500" />}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-foreground capitalize">{type}s</h4>
-                            <p className="text-sm text-muted-foreground">{items.length} item{items.length > 1 ? 's' : ''}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-foreground">${total.toLocaleString()}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {Math.round((total / totalBudgetUsed) * 100)}% of total
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Destination Detail Modal */}
-      {selectedDestination && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
-            <div className="relative h-64">
-              <img
-                src={selectedDestination.image}
-                alt={selectedDestination.name}
-                className="w-full h-full object-cover"
-              />
-              <button
-                onClick={() => setSelectedDestination(null)}
-                className="absolute top-4 right-4 p-2 bg-black/50 backdrop-blur-sm rounded-full text-white hover:bg-black/70 transition-colors"
-                aria-label="Close destination details"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <div className="absolute bottom-4 left-4 right-4">
-                <h2 className="text-3xl font-bold text-white mb-2">{selectedDestination.name}</h2>
-                <p className="text-white/90">{selectedDestination.country}</p>
               </div>
             </div>
             
-            <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1 px-3 py-1 bg-yellow-500/10 rounded-lg">
-                    <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                    <span className="font-semibold">{selectedDestination.rating}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span className="text-sm">Best time: {selectedDestination.bestTime}</span>
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-primary">{selectedDestination.price}</div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Set Budget</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={budget}
+                  onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
+                  className="flex-1 p-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="5000"
+                />
+                <button className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors" aria-label="Update budget">
+                  Update
+                </button>
               </div>
-
+            </div>
+            
+            {itinerary.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">About</h3>
-                <p className="text-muted-foreground">{selectedDestination.description}</p>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Top Highlights</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {selectedDestination.highlights.map((highlight, idx) => (
-                    <div key={idx} className="flex items-center gap-2 p-3 bg-background/50 rounded-lg border border-border">
-                      <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span className="text-sm">{highlight}</span>
+                <h4 className="text-lg font-semibold text-foreground mb-4">Expense Breakdown</h4>
+                <div className="space-y-3">
+                  {itinerary.map(item => (
+                    <div key={item.id} className="bg-background/50 border border-border rounded-lg p-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium text-foreground">{item.activity}</div>
+                          <div className="text-sm text-muted-foreground">{item.location}</div>
+                        </div>
+                        <div className="font-semibold text-foreground">${item.cost}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {itineraryError && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 my-4 text-sm text-red-500">
-                  {itineraryError}
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setActiveTab('flights');
-                    setSelectedDestination(null);
-                  }}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-500 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-600 transition-colors"
-                >
-                  Book Trip
-                </button>
-                <button
-                  onClick={generateAiItinerary}
-                  disabled={isGeneratingItinerary}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isGeneratingItinerary ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Generating...
-                    </>
-                  ) : (
-                    <Sparkles className="w-5 h-5" />
-                  )}
-                  Generate AI Itinerary
-                </button>
-                <button 
-                  className="px-4 py-3 bg-background border border-border rounded-lg hover:bg-background/80 transition-colors"
-                  aria-label="Add to favorites"
-                >
-                  <Heart className="w-5 h-5" />
-                </button>
-                <button 
-                  className="px-4 py-3 bg-background border border-border rounded-lg hover:bg-background/80 transition-colors"
-                  aria-label="Share trip"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

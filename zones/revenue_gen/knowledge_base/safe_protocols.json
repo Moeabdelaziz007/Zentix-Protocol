@@ -1,0 +1,47 @@
+{
+  "protocols": [
+    {
+      "name": "Aave",
+      "version": "v3",
+      "chain": "Ethereum",
+      "flashLoanFee": 0.0009,
+      "securityScore": 9.5,
+      "lastAudit": "2023-12-01",
+      "auditor": "Trail of Bits",
+      "safe": true
+    },
+    {
+      "name": "Balancer",
+      "version": "v2",
+      "chain": "Ethereum",
+      "flashLoanFee": 0.001,
+      "securityScore": 8.7,
+      "lastAudit": "2023-11-15",
+      "auditor": "OpenZeppelin",
+      "safe": true
+    },
+    {
+      "name": "dYdX",
+      "version": "v4",
+      "chain": "Ethereum",
+      "flashLoanFee": 0.002,
+      "securityScore": 9.2,
+      "lastAudit": "2023-10-20",
+      "auditor": "Consensys Diligence",
+      "safe": true
+    },
+    {
+      "name": "Uniswap",
+      "version": "v3",
+      "chain": "Ethereum",
+      "flashLoanFee": 0,
+      "securityScore": 9.8,
+      "lastAudit": "2023-12-10",
+      "auditor": "Trail of Bits",
+      "safe": true,
+      "notes": "Zero fee flash swaps available"
+    }
+  ],
+  "lastUpdated": "2023-12-15T10:30:00Z",
+  "maintainer": "revenue_gen_zone"
+}

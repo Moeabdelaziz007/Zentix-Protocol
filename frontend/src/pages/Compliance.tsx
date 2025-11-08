@@ -7,11 +7,12 @@ import { Input } from '../components/ui/Input';
 import { Progress } from '../components/ui/Progress';
 import { ComplianceChart } from '@/components/charts/ComplianceChart';
 import { formatDate, formatComplianceScore } from '../utils/formatters';
-import { mockComplianceData, mockAuditData } from '../data/dashboardMockData';
+import { mockComplianceData } from '../data/dashboardMockData';
 
 export function Compliance() {
   const [did, setDid] = useState('zxdid:zentix:0x1A2B3C4D5E6F7G8H9I0J');
   const [searchDid, setSearchDid] = useState(did);
+  const [error, setError] = useState('');
 
   const { data, loading } = useApi(
     () => apiService.getComplianceScore(did).catch(() => mockComplianceData),
@@ -33,21 +34,31 @@ export function Compliance() {
   };
 
   const handleExport = async () => {
+    if (!data) return;
+    
     try {
-      const auditData = await apiService.exportAudit(did).catch(() => mockAuditData);
-      const blob = new Blob([JSON.stringify(auditData, null, 2)], { type: 'application/json' });
+      // Use the recentViolations data since auditTrail doesn't exist in the current type
+      const blob = new Blob([JSON.stringify(data.recentViolations, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `audit-${did}.json`;
       a.click();
-    } catch (err) {
-      alert('Failed to export audit');
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Failed to export audit');
     }
   };
 
   if (loading) {
     return <div className="text-center py-12">Loading compliance data...</div>;
+  }
+
+  try {
+    if (error) {
+      throw new Error(error);
+    }
+  } catch (error: unknown) {
+    setError(error instanceof Error ? error.message : 'Failed to load compliance data');
   }
 
   return (
@@ -75,7 +86,7 @@ export function Compliance() {
 
       {data && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-in-up delay-100">
             <Card className="hover:shadow-lg">
               <CardHeader>
                 <CardTitle>Compliance Score</CardTitle>
@@ -101,7 +112,7 @@ export function Compliance() {
             </Card>
           </div>
 
-          <Card className="animate-slide-in-up hover:shadow-lg" style={{ animationDelay: '0.2s' }}>
+          <Card className="animate-slide-in-up hover:shadow-lg delay-200">
             <CardHeader>
               <CardTitle>Compliance Score Trend</CardTitle>
             </CardHeader>
@@ -112,17 +123,16 @@ export function Compliance() {
             </CardContent>
           </Card>
 
-          <Card className="animate-slide-in-up hover:shadow-lg" style={{ animationDelay: '0.3s' }}>
+          <Card className="animate-slide-in-up hover:shadow-lg delay-300">
             <CardHeader>
               <CardTitle>Recent Violations</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {data.recentViolations.map((violation, index) => (
+                {data.recentViolations.map((violation) => (
                   <div 
                     key={violation.id} 
-                    className="border-b border-border pb-4 last:border-0 transition-all duration-200 hover:bg-muted/30 hover:px-2 hover:-mx-2 rounded"
-                    style={{ animationDelay: `${0.4 + index * 0.05}s` }}
+                    className="border-b border-border pb-4 last:border-0 transition-all duration-200 hover:bg-muted/30 hover:px-2 hover:-mx-2 rounded delay-400"
                   >
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">

@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "app_name": "LunaTravelApp",
+    "version": "1.0.0",
+    "agent_core": "Luna.MainAgent",
+    "governance_protocol": "/protocols/ai_agent_governance.json",
+    "collaboration_topology": "quantum-graph"
+  },
+  "main_agent": {
+    "id": "Luna.MainAgent",
+    "persona": {
+      "role": "Travel Architect",
+      "tone": "empathetic, analytical, adventurous",
+      "thinking_style": "Quantum Parallel Reasoning"
+    },
+    "skills": [
+      "trip_planning", "cost_optimization", "cultural_recommendation", "climate_prediction"
+    ],
+    "memory": {
+      "type": "temporal-contextual",
+      "capacity": "high",
+      "storage": "/data/luna-memory.db"
+    },
+    "tools": ["ItineraryBuilderAPI", "FlightSearchAPI", "WeatherPredictorMCP"]
+  },
+  "sub_agents": [
+    {
+      "id": "Luna.FlightAgent",
+      "specialty": "airfare_search",
+      "tools": ["FlightAPI", "BudgetAnalyzer"],
+      "reasoning_mode": "quantum-hierarchical",
+      "collaboration": ["Luna.MainAgent", "Luna.HotelAgent"]
+    },
+    {
+      "id": "Luna.HotelAgent",
+      "specialty": "accommodation",
+      "tools": ["BookingAPI", "MapGeoLocator"],
+      "reasoning_mode": "context-aware-evaluation"
+    },
+    {
+      "id": "Luna.ActivityAgent",
+      "specialty": "local_experiences",
+      "tools": ["TourAPI", "CultureDB"],
+      "reasoning_mode": "emotional-pattern-matching"
+    }
+  ],
+  "note_taker": {
+    "id": "Luna.NoteAgent",
+    "role": "context_recorder",
+    "memory_link": "main_agent.memory",
+    "functions": ["record_decision_paths", "summarize_conversations", "track_user_preferences"]
+  },
+  "reasoning_protocol": {
+    "framework": "Quantum Topological Network",
+    "steps": [
+      "perception → mapping → alignment → synthesis → verification",
+      "each step runs parallel micro-thought nodes"
+    ],
+    "validation_rules": {
+      "logical_consistency": true,
+      "emotional_coherence": true,
+      "output_traceability": true
+    }
+  },
+  "collaboration": {
+    "mode": "asynchronous quantum synchronization",
+    "channels": [
+      {"from": "MainAgent", "to": "SubAgents", "type": "intent-broadcast"},
+      {"from": "SubAgents", "to": "NoteAgent", "type": "context-stream"},
+      {"from": "All", "to": "UserInterface", "type": "merged-response"}
+    ]
+  },
+  "tools": {
+    "FlightAPI": "https://api.luna.com/flights",
+    "HotelAPI": "https://api.luna.com/hotels",
+    "WeatherPredictorMCP": "mcp://weather/analyze",
+    "QuantumMemorySync": "mcp://memory/sync"
+  },
+  "quality_metrics": {
+    "response_accuracy_target": 0.95,
+    "emotional_alignment_score": 0.9,
+    "latency_ms_target": 150,
+    "error_tolerance": 0.03,
+    "self_improvement_interval": "24h"
+  }
+}

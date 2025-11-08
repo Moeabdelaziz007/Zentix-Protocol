@@ -1,34 +1,35 @@
 import { useState } from 'react';
 import { 
   Bot, 
-  Sparkles, 
-  Wrench, 
-  Play, 
-  Save, 
+  Plus, 
+  Coins, 
+  Gavel, 
+  FileText, 
+  TrendingUp, 
+  Zap, 
+  Brain,
   Globe,
   Mail,
   Database,
-  Plus,
+  Palette,
   Upload,
   Download,
   Code,
-  Palette,
   Users,
   Workflow,
-  Wallet,
-  Coins,
-  ShoppingCart,
-  Gavel, // For legal review
-  Network,
-  Loader2, // For loading spinner
-  FileText,
   CheckCircle,
-  TrendingUp,
-  Zap,
-  Brain
+  Sparkles,
+  Wallet,
+  Network,
+  Save,
+  Wrench,
+  ShoppingCart,
+  Play,
+  Loader2
 } from 'lucide-react';
 import { ProgressIndicator } from '../ui/ProgressIndicator';
-import { apiService, FinancialAnalysisResult, LegalContractReviewResult } from '../../services/api';
+import { apiService } from '../../services/api';
+import type { FinancialAnalysisResult, LegalContractReviewResult, MedicalAnalysisResult, ScientificAnalysisResult } from '../../services/api';
 
 interface AgentTemplate {
   id: string;
@@ -178,8 +179,8 @@ export function ZentixForgeApp() {
         const result: LegalContractReviewResult = await apiService.reviewLegalContract(sandboxDocumentContent);
         setSandboxAnalysisResult(result);
       }
-    } catch (error: any) {
-      setSandboxError(error.message || 'An error occurred during analysis.');
+    } catch (error: unknown) {
+      setSandboxError(error instanceof Error ? error.message : 'An error occurred during analysis.');
     } finally {
       setIsSandboxAnalyzing(false);
     }
@@ -879,38 +880,38 @@ export function ZentixForgeApp() {
                           <p className="text-sm font-medium text-foreground">Compliance Score: <span className="text-xl font-bold">{(sandboxAnalysisResult as LegalContractReviewResult).complianceScore}%</span></p>
                         </div>
                       )}
-                      {sandboxToolSelected === 'medical-analysis' && sandboxAnalysisResult && (
+                      {sandboxToolSelected === 'medical-analysis' && sandboxAnalysisResult && 'findings' in sandboxAnalysisResult && (
                         <div className="space-y-3">
+                          <h5 className="font-medium text-foreground">Medical Analysis Results</h5>
                           <p className="text-sm text-muted-foreground">{(sandboxAnalysisResult as MedicalAnalysisResult).summary}</p>
-                          <div>
-                            <h6 className="font-medium text-foreground mb-1">Findings:</h6>
+                          {Array.isArray((sandboxAnalysisResult as MedicalAnalysisResult).findings) && (
                             <ul className="list-disc list-inside text-sm text-muted-foreground">
-                              {(sandboxAnalysisResult as MedicalAnalysisResult).findings?.map((finding, idx) => (
-                                <li key={idx}>{finding.condition} (Confidence: {finding.confidence}%) - {finding.evidence}</li>
+                              {(sandboxAnalysisResult as MedicalAnalysisResult).findings.map((finding: { condition: string; confidence: number; evidence: string }, idx: number) => (
+                                <li key={idx}>{finding.condition} (Confidence: {finding.confidence})</li>
                               ))}
                             </ul>
-                          </div>
-                          <div>
-                            <h6 className="font-medium text-foreground mb-1">Recommendations:</h6>
+                          )}
+                          {Array.isArray((sandboxAnalysisResult as MedicalAnalysisResult).recommendations) && (
                             <ul className="list-disc list-inside text-sm text-blue-500">
-                              {(sandboxAnalysisResult as MedicalAnalysisResult).recommendations?.map((rec, idx) => (
+                              {(sandboxAnalysisResult as MedicalAnalysisResult).recommendations.map((rec: string, idx: number) => (
                                 <li key={idx}>{rec}</li>
                               ))}
                             </ul>
-                          </div>
+                          )}
                         </div>
                       )}
-                      {sandboxToolSelected === 'scientific-analysis' && sandboxAnalysisResult && (
+
+                      {sandboxToolSelected === 'scientific-analysis' && sandboxAnalysisResult && 'key_points' in sandboxAnalysisResult && (
                         <div className="space-y-3">
-                          <p className="text-sm text-muted-foreground">{(sandboxAnalysisResult as ScientificAnalysisResult).summary}</p>
-                          <div>
-                            <h6 className="font-medium text-foreground mb-1">Key Points:</h6>
+                          <h5 className="font-medium text-foreground">Scientific Analysis Results</h5>
+                          <p className="text-sm text-muted-foreground">{(sandboxAnalysisResult as ScientificAnalysisResult).methodology}</p>
+                          {Array.isArray((sandboxAnalysisResult as ScientificAnalysisResult).key_points) && (
                             <ul className="list-disc list-inside text-sm text-muted-foreground">
-                              {(sandboxAnalysisResult as ScientificAnalysisResult).key_points?.map((point, idx) => (
+                              {(sandboxAnalysisResult as ScientificAnalysisResult).key_points.map((point: string, idx: number) => (
                                 <li key={idx}>{point}</li>
                               ))}
                             </ul>
-                          </div>
+                          )}
                           <div>
                             <h6 className="font-medium text-foreground mb-1">Methodology:</h6>
                             <p className="text-sm text-muted-foreground">{(sandboxAnalysisResult as ScientificAnalysisResult).methodology}</p>
@@ -923,7 +924,6 @@ export function ZentixForgeApp() {
                             <h6 className="font-medium text-foreground mb-1">Implications:</h6>
                             <p className="text-sm text-muted-foreground">{(sandboxAnalysisResult as ScientificAnalysisResult).implications}</p>
                           </div>
-                          <p className="text-sm font-medium text-foreground">Confidence Score: <span className="text-xl font-bold">{(sandboxAnalysisResult as ScientificAnalysisResult).confidence}%</span></p>
                         </div>
                       )}
                       {sandboxToolSelected === 'market-analysis' && sandboxAnalysisResult && (

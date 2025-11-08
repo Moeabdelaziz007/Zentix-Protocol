@@ -5,8 +5,6 @@ import { EnhancedStatCard } from '../components/dashboard/EnhancedStatCard';
 import { ComplianceChart } from '@/components/charts/ComplianceChart';
 import { CardSkeleton } from '../components/ui/SkeletonLoader';
 import { mockDashboardData } from '../data/dashboardMockData';
-import { useNotifications } from '../contexts/NotificationContext';
-import { Button } from '../components/ui/Button';
 import { Shield, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export function Dashboard() {
@@ -14,7 +12,6 @@ export function Dashboard() {
     () => apiService.getDashboardData().catch(() => mockDashboardData),
     []
   );
-  const { addNotification } = useNotifications();
 
   const complianceChartData = [
     { date: '2025-01-14', score: 97.2 },
@@ -64,7 +61,7 @@ export function Dashboard() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="animate-slide-in-up delay-100">
           <EnhancedStatCard
             title="Active Guardians"
             value={data.guardians.active}
@@ -75,7 +72,7 @@ export function Dashboard() {
           />
         </div>
 
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
+        <div className="animate-slide-in-up delay-200">
           <EnhancedStatCard
             title="Total Reports"
             value={data.reports.total}
@@ -86,7 +83,7 @@ export function Dashboard() {
           />
         </div>
 
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.3s' }}>
+        <div className="animate-slide-in-up delay-300">
           <EnhancedStatCard
             title="Compliance Score"
             value={`${data.networkHealth.averageCompliance}%`}
@@ -97,7 +94,7 @@ export function Dashboard() {
           />
         </div>
 
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
+        <div className="animate-slide-in-up delay-400">
           <EnhancedStatCard
             title="Total Audits"
             value={data.governance.totalAudits}
@@ -109,7 +106,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <GlassCard variant="glass" className="animate-slide-in-up" style={{ animationDelay: '0.5s' }}>
+      <GlassCard variant="glass" className="animate-slide-in-up delay-500">
         <GlassCardHeader>
           <GlassCardTitle>Compliance Score Trend</GlassCardTitle>
         </GlassCardHeader>

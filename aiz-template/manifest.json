@@ -1,0 +1,33 @@
+{
+  "name": "aiz-template",
+  "version": "1.0.0",
+  "type": "subzone",
+  "description": "Template for creating new Autonomous AI Zones (AIZs)",
+  "author": "Zentix Protocol",
+  "license": "MIT",
+  "entryPoint": "index.js",
+  "dependencies": {
+    "ethers": "^6.0.0",
+    "axios": "^1.4.0"
+  },
+  "services": [],
+  "agents": [
+    {
+      "name": "planner_agent",
+      "type": "planner",
+      "description": "High-level planner agent for the zone"
+    },
+    {
+      "name": "risk_agent",
+      "type": "risk",
+      "description": "Risk and compliance agent for the zone"
+    },
+    {
+      "name": "execution_agent",
+      "type": "execution",
+      "description": "Execution agent that interacts with tools and smart contracts"
+    }
+  ],
+  "tools": [],
+  "data_pipelines": []
+}

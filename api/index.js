@@ -1,5 +1,14 @@
 import http from 'http';
 import https from 'https';
+// Import Luna API handlers
+import {
+  searchFlights,
+  searchPlaces,
+  searchGooglePlaces,
+  generateItinerary,
+  searchHotels,
+  searchActivities
+} from './luna/index.js';
 
 // Health check endpoint
 const healthHandler = (req, res) => {
@@ -132,6 +141,60 @@ const requestHandler = (req, res) => {
 
   // Route handling
   try {
+    // Handle Luna Travel API routes
+    if (url.startsWith('/api/luna/')) {
+      const lunaPath = url.substring(10); // Remove '/api/luna/' prefix
+      console.log('Luna API route:', { url, lunaPath, method }); // Debug log
+      
+      switch (lunaPath) {
+        case '/flights/search':
+          if (method === 'POST') {
+            return searchFlights(req, res);
+          }
+          break;
+          
+        case '/places/search':
+          if (method === 'GET') {
+            return searchPlaces(req, res);
+          }
+          break;
+          
+        case '/places/google-search':
+          if (method === 'GET') {
+            return searchGooglePlaces(req, res);
+          }
+          break;
+          
+        case '/itinerary/generate':
+          if (method === 'POST') {
+            return generateItinerary(req, res);
+          }
+          break;
+          
+        case '/hotels/search':
+          if (method === 'POST') {
+            return searchHotels(req, res);
+          }
+          break;
+          
+        case '/activities/search':
+          if (method === 'POST') {
+            return searchActivities(req, res);
+          }
+          break;
+      }
+      
+      // If no route matched, return 404
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ 
+        error: 'Not found',
+        message: 'Luna API endpoint not found',
+        timestamp: new Date().toISOString()
+      }));
+      return;
+    }
+    
+    // Handle existing routes
     switch (url) {
       case '/api/health':
         if (method === 'GET') {
@@ -164,7 +227,7 @@ const requestHandler = (req, res) => {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
           error: 'Not found',
-          message: 'Use /api/health, /api/metrics, or /api/sla',
+          message: 'Use /api/health, /api/metrics, /api/sla, or /api/luna/*',
           timestamp: new Date().toISOString()
         }));
     }

@@ -370,6 +370,40 @@ class ApiService {
     return this.fetchJSON(`/api/luna/places/google-search?${params}`);
   }
 
+  // Add new method for generating AI itinerary
+  async generateAiItinerary(destination: string, preferences: string): Promise<ItineraryItem[]> {
+    return this.fetchJSON('/api/luna/itinerary/generate', {
+      method: 'POST',
+      body: JSON.stringify({ destination, preferences }),
+    });
+  }
+
+  // Add new method for searching hotels
+  async searchHotels(params: {
+    city: string;
+    checkIn: string;
+    checkOut: string;
+    guests: number;
+  }): Promise<any[]> {
+    return this.fetchJSON('/api/luna/hotels/search', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  // Add new method for searching activities
+  async searchActivities(params: {
+    location: string;
+    interests: string[];
+    startDate: string;
+    endDate: string;
+  }): Promise<any[]> {
+    return this.fetchJSON('/api/luna/activities/search', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
   // Google Perspective API Methods
   async analyzeToxicity(text: string, attributes: string[] = ['TOXICITY']): Promise<ToxicityAnalysis> {
     return this.fetchJSON('/api/moderation/toxicity', {

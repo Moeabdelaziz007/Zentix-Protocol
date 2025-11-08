@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "app_name": "AIOS",
+    "version": "1.0.0",
+    "agent_core": "AIOS.MainAgent",
+    "governance_protocol": "/protocols/ai_agent_governance.json",
+    "collaboration_topology": "quantum-graph"
+  },
+  "main_agent": {
+    "id": "AIOS.MainAgent",
+    "persona": {
+      "role": "Frontend AI Director",
+      "tone": "user-friendly, adaptive, responsive",
+      "thinking_style": "Quantum Parallel Reasoning"
+    },
+    "skills": [
+      "ui_rendering", "user_interaction", "adaptive_design", "real_time_feedback"
+    ],
+    "memory": {
+      "type": "contextual-temporal",
+      "capacity": "high",
+      "storage": "/data/aios-memory.db"
+    },
+    "tools": ["UIRendererAPI", "UserInteractionMCP", "AdaptiveDesignEngine"]
+  },
+  "sub_agents": [
+    {
+      "id": "AIOS.UIDesigner",
+      "specialty": "interface_design",
+      "tools": ["DesignAPI", "LayoutEngine"],
+      "reasoning_mode": "creative-pattern-matching",
+      "collaboration": ["AIOS.MainAgent", "AIOS.UserExperience"]
+    },
+    {
+      "id": "AIOS.UserExperience",
+      "specialty": "user_journey_optimization",
+      "tools": ["AnalyticsAPI", "BehaviorPredictor"],
+      "reasoning_mode": "data-driven-evaluation"
+    },
+    {
+      "id": "AIOS.FeedbackProcessor",
+      "specialty": "real_time_feedback",
+      "tools": ["SentimentAnalyzer", "ResponseGenerator"],
+      "reasoning_mode": "emotional-intelligence-processing"
+    }
+  ],
+  "note_taker": {
+    "id": "AIOS.NoteAgent",
+    "role": "user_interaction_recorder",
+    "memory_link": "main_agent.memory",
+    "functions": ["record_user_actions", "summarize_sessions", "track_preferences"]
+  },
+  "reasoning_protocol": {
+    "framework": "Quantum Topological Network",
+    "steps": [
+      "perception → ui_mapping → interaction_alignment → response_synthesis → verification",
+      "each step runs parallel micro-interaction nodes"
+    ],
+    "validation_rules": {
+      "logical_consistency": true,
+      "user_experience_coherence": true,
+      "output_traceability": true
+    }
+  },
+  "collaboration": {
+    "mode": "asynchronous quantum synchronization",
+    "channels": [
+      {"from": "MainAgent", "to": "SubAgents", "type": "intent-broadcast"},
+      {"from": "SubAgents", "to": "NoteAgent", "type": "context-stream"},
+      {"from": "All", "to": "UserInterface", "type": "merged-response"}
+    ]
+  },
+  "tools": {
+    "UIRendererAPI": "https://api.aios.com/ui",
+    "UserInteractionMCP": "mcp://interaction/handle",
+    "AdaptiveDesignEngine": "mcp://design/adapt",
+    "QuantumMemorySync": "mcp://memory/sync"
+  },
+  "quality_metrics": {
+    "response_accuracy_target": 0.95,
+    "user_satisfaction_score": 0.92,
+    "latency_ms_target": 100,
+    "error_tolerance": 0.02,
+    "self_improvement_interval": "12h"
+  }
+}

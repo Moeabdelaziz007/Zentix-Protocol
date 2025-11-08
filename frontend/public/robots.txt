@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zentix-protocol.vercel.app/sitemap.xml

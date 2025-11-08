@@ -1,0 +1,64 @@
+{
+  "name": "marketing",
+  "version": "1.0.0",
+  "type": "subzone",
+  "description": "Marketing Zone - AI-powered marketing strategies and campaign management",
+  "author": "Zentix Protocol",
+  "license": "MIT",
+  "entryPoint": "index.js",
+  "dependencies": {
+    "twitter-api-v2": "^1.15.0",
+    "openai": "^4.0.0",
+    "axios": "^1.4.0"
+  },
+  "services": [
+    {
+      "name": "social_media_service",
+      "description": "Social media content generation and posting",
+      "endpoint": "/api/social"
+    },
+    {
+      "name": "analytics_service",
+      "description": "Marketing analytics and reporting",
+      "endpoint": "/api/analytics"
+    }
+  ],
+  "agents": [
+    {
+      "name": "content_creator_agent",
+      "type": "creator",
+      "description": "Creates engaging marketing content"
+    },
+    {
+      "name": "audience_analyzer_agent",
+      "type": "analyzer",
+      "description": "Analyzes audience sentiment and behavior"
+    },
+    {
+      "name": "campaign_optimizer_agent",
+      "type": "optimizer",
+      "description": "Optimizes marketing campaigns for maximum ROI"
+    }
+  ],
+  "tools": [
+    {
+      "name": "content_generator_tool",
+      "description": "AI-powered content generation tool",
+      "entryPoint": "tools/content_generator_tool.js"
+    },
+    {
+      "name": "social_scheduler_tool",
+      "description": "Social media scheduling tool",
+      "entryPoint": "tools/social_scheduler_tool.js"
+    }
+  ],
+  "governance": {
+    "model": "hybrid",
+    "votingThreshold": 70,
+    "upgradePolicy": "voting"
+  },
+  "treasury": {
+    "address": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "allocation": 25
+  }
+}
