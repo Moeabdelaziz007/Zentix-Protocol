@@ -1,0 +1,252 @@
+==============================================================================
+                    ZENTIX PROTOCOL - MANUS COMPLETION TASK
+==============================================================================
+
+You are an expert TypeScript/Node.js developer specializing in AI agent systems,
+blockchain integration, and enterprise-grade backend services.
+
+PROJECT CONTEXT:
+----------------
+Zentix Protocol is an AI agent framework with:
+- Blockchain-backed digital identities (DID)
+- Self-sustaining token economy (ZXT)
+- Ethical governance with guardian agents
+- Zero-cost deployment (Manus → GitHub → Vercel)
+
+CURRENT STATUS:
+---------------
+✅ Core modules: Identity, Economy, Blockchain - COMPLETE
+✅ Smart contracts: 5 Solidity contracts - COMPLETE
+✅ Marketing automation: Agent factory, referrals - COMPLETE
+⚠️ Guardian API: Missing 3 methods
+⚠️ Relayer Service: Missing ethers.js integration
+❌ Cron Jobs: Empty templates only
+❌ Supabase Client: Empty methods only
+
+YOUR MISSION:
+-------------
+Complete the 4 missing components to make the project production-ready.
+
+==============================================================================
+                            TASK 1: GUARDIAN API
+==============================================================================
+
+FILES TO MODIFY:
+- core/security/guardianAgent.ts
+- core/security/policyEngine.ts
+
+MISSING METHODS:
+
+1. In GuardianAgent class:
+
+   static getAllGuardians(): Guardian[] {
+     // Return all registered guardians from in-memory storage
+     // Include: DID, role, skills, active status, reputation
+   }
+
+   static getAllReports(): GuardianReport[] {
+     // Return all violation reports
+     // Include: report ID, type, severity, votes, approved status
+   }
+
+2. In PolicyEngine class:
+
+   static exportAudit(did: string): AuditExport {
+     // Export compliance audit for specific agent
+     // Return: violations, score, recommendations, history
+     // Format: JSON-serializable object
+   }
+
+REQUIREMENTS:
+- Use existing data structures (guardians Map, reports Map)
+- Return empty arrays if no data
+- Add proper TypeScript types
+- No external dependencies
+
+==============================================================================
+                        TASK 2: RELAYER SERVICE
+==============================================================================
+
+FILE TO MODIFY:
+- core/relayer/relayerService.ts
+
+CURRENT ISSUES:
+- ethers is imported but not properly used
+- No actual blockchain transaction sending
+- Mock nonce management
+
+REQUIRED FIXES:
+
+1. Fix ethers.js integration:
+   import { ethers, Wallet, providers } from 'ethers';
+
+2. Implement proper nonce fetching:
+   async getNonce(address: string): Promise<number> {
+     const provider = new providers.JsonRpcProvider(process.env.RPC_MUMBAI);
+     return await provider.getTransactionCount(address);
+   }
+
+3. Implement actual transaction relay:
+   async relayTransaction(request: RelayRequest): Promise<string> {
+     // 1. Verify signature
+     // 2. Create wallet from RELAYER_PRIVATE_KEY
+     // 3. Send transaction on behalf of user
+     // 4. Return transaction hash
+   }
+
+REQUIREMENTS:
+- Use Mumbai testnet (process.env.RPC_MUMBAI)
+- Proper error handling
+- Gas estimation before sending
+- Return actual tx hash
+
+==============================================================================
+                        TASK 3: DAILY AUDIT CRON
+==============================================================================
+
+FILE TO COMPLETE:
+- server/cron/dailyAudit.ts
+
+IMPLEMENT runDailyAudit() function:
+
+async function runDailyAudit(): Promise<AuditResult> {
+  // 1. Import supabase client
+  // 2. Fetch all agents: await supabase.getAllAgents()
+  // 3. For each agent:
+  //    - Run PolicyEngine.checkCompliance(agent)
+  //    - Count violations by severity
+  //    - Calculate average compliance score
+  // 4. Generate recommendations (e.g., "5 agents need review")
+  // 5. Save audit summary to database
+  // 6. Return AuditResult with statistics
+}
+
+REQUIREMENTS:
+- Use Supabase for data persistence
+- Handle errors gracefully (try-catch)
+- Log progress to console
+- Return structured AuditResult object
+
+==============================================================================
+                    TASK 4: DISTRIBUTE REWARDS CRON
+==============================================================================
+
+FILE TO COMPLETE:
+- server/cron/distributeRewards.ts
+
+IMPLEMENT distributeWeeklyRewards() function:
+
+async function distributeWeeklyRewards(): Promise<RewardDistribution> {
+  // 1. Get guardians active in last 7 days
+  // 2. For each guardian, calculate score:
+  //    - violations_detected * 10 points
+  //    - audits_completed * 5 points
+  //    - reports_submitted * 3 points
+  // 3. Convert points to ZXT rewards (e.g., 1 point = 10 ZXT)
+  // 4. Call blockchain contract (mock for now):
+  //    - GuardianRewards.distributeRewards(guardianAddress, amount)
+  // 5. Save reward records to database
+  // 6. Return RewardDistribution summary
+}
+
+REQUIREMENTS:
+- Fetch data from Supabase
+- Clear contribution calculation algorithm
+- Mock smart contract call (log to console)
+- Save payment records to database
+
+==============================================================================
+                    TASK 5: SUPABASE CLIENT
+==============================================================================
+
+FILE TO COMPLETE:
+- core/db/supabaseClient.ts
+
+IMPLEMENT ALL CRUD METHODS:
+
+The file has 6 tables with empty methods. Implement using this pattern:
+
+async createAgent(agent: Omit<Agent, 'id'>): Promise<Agent | null> {
+  if (!this.client) return null;
+  
+  try {
+    const { data, error } = await this.client
+      .from('agents')
+      .insert([agent])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error creating agent:', err);
+    return null;
+  }
+}
+
+TABLES TO IMPLEMENT:
+1. agents - createAgent, getAgentByDID, getAllAgents
+2. guardians - registerGuardian, getActiveGuardians, updateGuardianReputation
+3. violations - recordViolation, getViolationsByAgent, getUnresolvedViolations
+4. audits - saveAudit, getAuditHistory
+5. rewards - recordReward, getRewardsByGuardian
+6. transactions - recordTransaction, getTransactionHistory
+
+REQUIREMENTS:
+- Use Supabase client methods (.from(), .insert(), .select(), etc.)
+- Proper error handling with try-catch
+- Return null on errors (don't throw)
+- Type-safe using provided interfaces
+
+==============================================================================
+                        GENERAL REQUIREMENTS
+==============================================================================
+
+CODE QUALITY:
+✅ TypeScript strict mode - no 'any' types
+✅ Async/await for all async operations
+✅ Try-catch error handling
+✅ Clear English comments
+✅ Consistent naming (camelCase for variables, PascalCase for classes)
+✅ No console.log in production code (use proper logging)
+
+TESTING:
+- Code should compile without errors: tsc --noEmit
+- Methods should have logical implementation
+- Use realistic data when mocking
+
+DO NOT CHANGE:
+❌ Existing interfaces and types
+❌ File structure
+❌ Import paths
+❌ Function signatures already defined
+
+==============================================================================
+                            SUCCESS CRITERIA
+==============================================================================
+
+After completion, the following should work:
+
+1. npm run type-check → No errors
+2. npm run build → Successful compilation
+3. npm run governance:daily-audit → Runs and returns audit results
+4. npm run governance:distribute-rewards → Runs and distributes rewards
+5. All Guardian API endpoints return data (not errors)
+6. Relayer can process transaction requests
+7. Supabase client can store/retrieve data
+
+==============================================================================
+                            DELIVERY FORMAT
+==============================================================================
+
+Please provide:
+1. Complete modified files (guardianAgent.ts, policyEngine.ts, relayerService.ts)
+2. Complete cron job files (dailyAudit.ts, distributeRewards.ts)
+3. Complete Supabase client (supabaseClient.ts)
+4. Brief summary of changes made
+
+Total expected output: ~500-800 lines of new/modified code
+
+==============================================================================
+
+Ready to start? Please complete all 5 tasks above. Good luck! 🚀
